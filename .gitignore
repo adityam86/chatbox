@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Secret Files (NEVER COMMIT CREDENTIALS)
+.env
+.env.*
+server/.env
+client/.env
+*.env
+*.env.local
+
+# Build Outputs
+dist/
+dist-ssr/
+client/dist/
+
+# Uploaded Files & Temporary Storage
+server/uploads/*
+!server/uploads/.gitkeep
+uploads/
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.local

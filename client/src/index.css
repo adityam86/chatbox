@@ -1,0 +1,256 @@
+:root {
+  /* Midnight Aurora Color System (Section 1) */
+  --bg-app: #080B14;
+  --bg-panel: #0D1220;
+  --bg-chat: #101625;
+  --bg-card: #141B2B;
+  --bg-input: #1A2233;
+  --bg-hover: #141B2B;
+  --bg-active: rgba(124, 92, 255, 0.12);
+
+  /* Bubbles */
+  --bubble-sent: #6848E8;
+  --bubble-sent-gradient: linear-gradient(135deg, #7C5CFF 0%, #6848E8 100%);
+  --bubble-recv: #1A2233;
+
+  /* Accents & Gradients */
+  --accent: #7C5CFF;
+  --accent-hover: #6C4AF5;
+  --accent-cyan: #38D9FF;
+  --aurora-gradient: linear-gradient(135deg, #7C5CFF 0%, #38D9FF 100%);
+  --aurora-gradient-hover: linear-gradient(135deg, #6C4AF5 0%, #20C7EE 100%);
+
+  /* Typography */
+  --text-primary: #F5F7FF;
+  --text-secondary: #929BB2;
+  --text-muted: #626B80;
+
+  /* Borders & Highlights */
+  --border-color: rgba(255, 255, 255, 0.07);
+  --border-focus: rgba(124, 92, 255, 0.4);
+
+  /* Status Indicators */
+  --tick-sent: #929BB2;
+  --tick-read: #38D9FF;
+  --online: #39D98A;
+  --danger: #FF5C70;
+  --danger-hover: #E63956;
+  --warning: #FFB84D;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+/* Custom Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 255, 0.4);
+}
+
+/* Form inputs & buttons */
+input, textarea, button {
+  font-family: inherit;
+  outline: none;
+  border: none;
+}
+
+/* Primary Button */
+.btn-primary {
+  background: var(--aurora-gradient);
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(124, 92, 255, 0.3);
+}
+
+.btn-primary:hover {
+  background: var(--aurora-gradient-hover);
+  box-shadow: 0 6px 22px rgba(124, 92, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Icon Buttons */
+.btn-icon {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-icon:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
+}
+
+/* Aurora Gradient Text */
+.aurora-text {
+  background: var(--aurora-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Frosted Glass Utilities */
+.glass-panel {
+  background: rgba(13, 18, 32, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+}
+
+.glass-pill {
+  background: rgba(26, 34, 51, 0.8);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Chat Wallpaper Effect */
+.chat-wallpaper {
+  background-color: var(--bg-chat);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(124, 92, 255, 0.06) 0%, transparent 50%),
+    radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 0);
+  background-size: 100% 100%, 28px 28px;
+}
+
+/* Double Checkmark Ticks */
+.tick-sent {
+  color: var(--tick-sent);
+}
+
+.tick-read {
+  color: var(--tick-read);
+  filter: drop-shadow(0 0 3px rgba(56, 217, 255, 0.5));
+}
+
+/* Micro Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes bubbleSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bubble-in {
+  animation: bubbleSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes onlinePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(57, 217, 138, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(57, 217, 138, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(57, 217, 138, 0);
+  }
+}
+
+.online-pulse {
+  animation: onlinePulse 2.2s infinite;
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  display: inline-block;
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+.typing-dot:nth-child(1) {
+  animation: dotBounce 1.2s infinite 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation: dotBounce 1.2s infinite 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation: dotBounce 1.2s infinite 0.4s;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
