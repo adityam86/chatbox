@@ -30,10 +30,18 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+  if (CLIENT_URL && (origin === CLIENT_URL || origin.startsWith(CLIENT_URL))) return true;
+  if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com') || origin.endsWith('.netlify.app')) return true;
+  return true;
+};
+
 // Setup Socket.IO with CORS
 const io = new Server(server, {
   cors: {
-    origin: [CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
+    origin: (origin, callback) => callback(null, true),
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -44,7 +52,7 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(cors({
-  origin: [CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
+  origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
   credentials: true,
 }));
 app.use(express.json({ limit: '25mb' }));

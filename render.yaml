@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: chatbox-api
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        value: gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+      - key: DB_USER
+        value: 3B9GeN19dVccMVe.root
+      - key: DB_PASSWORD
+        value: Ayndn29umkSVWl39
+      - key: DB_NAME
+        value: test
+      - key: DB_PORT
+        value: 4000
+      - key: DB_SSL
+        value: true
+      - key: JWT_SECRET
+        value: super_secret_chatapp_jwt_key_2026_change_in_production
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLIENT_URL
+        value: '*'
