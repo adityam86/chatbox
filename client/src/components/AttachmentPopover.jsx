@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Video, FileText, Music, MapPin, User, BarChart2, CreditCard, Code, Tv, X } from 'lucide-react';
+import { Camera, Video, FileText, Music, MapPin, User, BarChart2, CreditCard, Code, Tv, Eye, AlertTriangle, X } from 'lucide-react';
 
 export default function AttachmentPopover({
   isOpen,
@@ -14,6 +14,10 @@ export default function AttachmentPopover({
   onOpenSplitBill,
   onInsertCode,
   onOpenWatchTogether,
+  isViewOnce,
+  onToggleViewOnce,
+  isPriority,
+  onTogglePriority,
 }) {
   if (!isOpen) return null;
 
@@ -88,6 +92,22 @@ export default function AttachmentPopover({
       color: '#A29BFE',
       action: onShareContact,
     },
+    {
+      id: 'view_once',
+      label: isViewOnce ? 'View-Once: Active ✓' : 'View-Once Mode',
+      icon: Eye,
+      color: isViewOnce ? '#38D9FF' : '#929BB2',
+      action: onToggleViewOnce,
+      isActive: isViewOnce,
+    },
+    {
+      id: 'priority',
+      label: isPriority ? 'Priority Alert: Active ✓' : 'Priority Alert',
+      icon: AlertTriangle,
+      color: isPriority ? '#FF5C70' : '#929BB2',
+      action: onTogglePriority,
+      isActive: isPriority,
+    },
   ];
 
   return (
@@ -110,14 +130,17 @@ export default function AttachmentPopover({
         className="fade-in"
         style={{
           position: 'absolute',
-          bottom: '68px',
-          left: '16px',
-          width: '210px',
+          bottom: 'calc(66px + var(--safe-bottom))',
+          left: '12px',
+          width: '230px',
+          maxWidth: 'calc(100vw - 24px)',
+          maxHeight: 'min(440px, calc(100dvh - 110px))',
+          overflowY: 'auto',
           backgroundColor: '#0D1220',
           border: '1px solid var(--border-color)',
           borderRadius: '16px',
           padding: '8px',
-          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.55)',
+          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.65)',
           zIndex: 50,
         }}
       >

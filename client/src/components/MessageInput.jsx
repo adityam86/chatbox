@@ -53,6 +53,15 @@ export default function MessageInput({
   const [isPriority, setIsPriority] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleToast, setScheduleToast] = useState(null);
+  const [isMobileScreen, setIsMobileScreen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 640 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileScreen(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { startTyping, stopTyping } = useSocket();
   const typingTimeoutRef = useRef(null);
@@ -393,14 +402,7 @@ export default function MessageInput({
   const isSlashCmd = text.startsWith('/') && !text.includes(' ');
 
   return (
-    <div
-      style={{
-        padding: '8px 16px 12px 16px',
-        backgroundColor: 'transparent',
-        position: 'relative',
-        zIndex: 20,
-      }}
-    >
+    <div className="message-composer-wrapper">
       {/* Hidden File Inputs */}
       <input type="file" ref={imageInputRef} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleFileUpload(e, 'image')} />
       <input type="file" ref={videoInputRef} style={{ display: 'none' }} accept="video/*" onChange={(e) => handleFileUpload(e, 'video')} />
@@ -429,6 +431,10 @@ export default function MessageInput({
           setShowAttachmentMenu(false);
           if (onOpenWatchTogether) onOpenWatchTogether();
         }}
+        isViewOnce={isViewOnce}
+        onToggleViewOnce={() => setIsViewOnce((prev) => !prev)}
+        isPriority={isPriority}
+        onTogglePriority={() => setIsPriority((prev) => !prev)}
       />
 
       {/* Interactive Poll Creator Modal */}
@@ -450,17 +456,19 @@ export default function MessageInput({
           className="fade-in"
           style={{
             position: 'absolute',
-            bottom: '72px',
+            bottom: 'calc(68px + var(--safe-bottom))',
             left: '50%',
             transform: 'translateX(-50%)',
             backgroundColor: '#141B2B',
             border: '1px solid var(--accent)',
             borderRadius: '20px',
             padding: '6px 16px',
-            fontSize: '12.5px',
+            fontSize: '12px',
             color: 'var(--text-primary)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
             zIndex: 60,
+            maxWidth: 'calc(100vw - 32px)',
+            whiteSpace: 'nowrap',
           }}
         >
           {scheduleToast}
@@ -473,8 +481,8 @@ export default function MessageInput({
           className="fade-in"
           style={{
             position: 'absolute',
-            bottom: '66px',
-            left: '20px',
+            bottom: 'calc(62px + var(--safe-bottom))',
+            left: '10px',
             backgroundColor: '#0D1220',
             border: '1px solid var(--border-color)',
             borderRadius: '12px',
@@ -484,7 +492,8 @@ export default function MessageInput({
             flexDirection: 'column',
             gap: '4px',
             zIndex: 45,
-            width: '280px',
+            width: 'min(280px, calc(100vw - 20px))',
+            maxWidth: 'calc(100vw - 20px)',
           }}
         >
           <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', padding: '4px 8px', textTransform: 'uppercase' }}>
@@ -625,81 +634,125 @@ export default function MessageInput({
         </div>
       )}
 
+      {/* Active Feature Badges */}
+      {isViewOnce && (
+        <div
+          className="composer-chip"
+          style={{
+            backgroundColor: 'rgba(56, 217, 255, 0.16)',
+            border: '1px solid var(--accent-cyan)',
+            color: 'var(--accent-cyan)',
+          }}
+        >
+          <span>① View-Once Mode (expires after 1 view)</span>
+          <button
+            type="button"
+            onClick={() => setIsViewOnce(false)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+              display: 'flex',
+              padding: '2px',
+            }}
+            title="Cancel view-once"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
+      {isPriority && (
+        <div
+          className="composer-chip"
+          style={{
+            backgroundColor: 'rgba(255, 92, 112, 0.18)',
+            border: '1px solid var(--danger)',
+            color: '#FF7B8B',
+          }}
+        >
+          <AlertTriangle size={13} />
+          <span>🚨 Urgent Breakthrough Priority Alert</span>
+          <button
+            type="button"
+            onClick={() => setIsPriority(false)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+              display: 'flex',
+              padding: '2px',
+            }}
+            title="Cancel priority alert"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
       {/* Live Voice Recording Bar */}
       {isRecording ? (
         <div
-          className="fade-in glass-pill"
+          className="fade-in composer-pill"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '6px 10px 6px 14px',
-            gap: '12px',
-            borderRadius: '26px',
-            border: '1px solid rgba(255, 77, 109, 0.25)',
+            border: '1px solid rgba(255, 77, 109, 0.35)',
+            gap: '8px',
           }}
         >
           <button
             type="button"
-            className="btn-icon"
+            className="composer-action-btn"
             onClick={cancelRecording}
-            style={{ color: 'var(--danger)', padding: '6px' }}
+            style={{ color: 'var(--danger)' }}
             title="Cancel"
           >
-            <Trash2 size={19} />
+            <Trash2 size={18} />
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
             <div
               style={{
-                width: '10px',
-                height: '10px',
+                width: '9px',
+                height: '9px',
                 borderRadius: '50%',
                 backgroundColor: 'var(--danger)',
                 boxShadow: '0 0 8px var(--danger)',
                 animation: 'pulse 1s infinite alternate',
+                flexShrink: 0,
               }}
             />
-            <span style={{ fontSize: '14.5px', color: 'var(--text-primary)', fontWeight: '500' }}>
+            <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500' }}>
               {formatTimer(recordingSeconds)}
             </span>
           </div>
 
           <button
             type="button"
-            className="btn-primary"
+            className="btn-primary composer-send-btn"
             onClick={sendRecording}
-            style={{ width: '38px', height: '38px', borderRadius: '50%', padding: 0 }}
             title="Send Voice Note"
           >
-            <Send size={17} />
+            <Send size={15} />
           </button>
         </div>
       ) : (
         /* Floating Message Composer Pill */
-        <div
-          className="glass-pill"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '5px 8px 5px 12px',
-            gap: '4px',
-            borderRadius: '26px',
-            transition: 'border-color 0.2s',
-          }}
-        >
+        <div className="composer-pill">
           <button
             type="button"
-            className="btn-icon"
+            className="composer-action-btn"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             title="Emojis"
             style={{ color: showEmojiPicker ? 'var(--accent)' : 'var(--text-secondary)' }}
           >
-            <Smile size={22} />
+            <Smile size={20} />
           </button>
 
           <button
             type="button"
-            className="btn-icon"
+            className="composer-action-btn"
             onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
             title="Attach file or media"
             style={{
@@ -708,122 +761,104 @@ export default function MessageInput({
               transition: 'all 0.2s ease',
             }}
           >
-            <Plus size={22} />
+            <Plus size={21} />
           </button>
 
-          {/* View-Once Toggle Button (Phase 5) */}
-          <button
-            type="button"
-            onClick={() => setIsViewOnce(!isViewOnce)}
-            title={isViewOnce ? 'View-once active (tap to turn off)' : 'Send as View Once (tap to activate)'}
-            style={{
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              border: `1.5px dashed ${isViewOnce ? 'var(--accent-cyan)' : 'var(--text-muted)'}`,
-              backgroundColor: isViewOnce ? 'rgba(56, 217, 255, 0.18)' : 'transparent',
-              color: isViewOnce ? 'var(--accent-cyan)' : 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '11px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              marginLeft: '2px',
-            }}
-          >
-            1
-          </button>
+          {/* Quick inline toggles for View-Once & Priority (compact on tablet/desktop) */}
+          <div className="composer-quick-toggles" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <button
+              type="button"
+              onClick={() => setIsViewOnce(!isViewOnce)}
+              title={isViewOnce ? 'View-once active (tap to turn off)' : 'Send as View Once (tap to activate)'}
+              style={{
+                width: '23px',
+                height: '23px',
+                borderRadius: '50%',
+                border: `1.5px dashed ${isViewOnce ? 'var(--accent-cyan)' : 'var(--text-muted)'}`,
+                backgroundColor: isViewOnce ? 'rgba(56, 217, 255, 0.2)' : 'transparent',
+                color: isViewOnce ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              1
+            </button>
 
-          {/* Priority Alert Toggle Button */}
-          <button
-            type="button"
-            onClick={() => setIsPriority(!isPriority)}
-            title={isPriority ? 'Urgent priority enabled' : 'Toggle urgent priority'}
-            style={{
-              background: isPriority ? 'rgba(255, 92, 112, 0.2)' : 'transparent',
-              border: 'none',
-              color: isPriority ? '#FF5C70' : 'var(--text-muted)',
-              cursor: 'pointer',
-              padding: '4px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <AlertTriangle size={17} />
-          </button>
+            <button
+              type="button"
+              onClick={() => setIsPriority(!isPriority)}
+              title={isPriority ? 'Urgent priority enabled' : 'Toggle urgent priority'}
+              style={{
+                background: isPriority ? 'rgba(255, 92, 112, 0.22)' : 'transparent',
+                border: 'none',
+                color: isPriority ? '#FF5C70' : 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '3px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <AlertTriangle size={15} />
+            </button>
+          </div>
 
           <input
             ref={inputRef}
             type="text"
-            placeholder="Type a message or / for AI commands..."
+            className="composer-text-input"
+            placeholder={isMobileScreen ? 'Message or / for commands...' : 'Type a message or / for AI commands...'}
             value={text}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            style={{
-              flex: 1,
-              backgroundColor: 'transparent',
-              color: 'var(--text-primary)',
-              padding: '8px 8px',
-              fontSize: '14.5px',
-            }}
           />
 
           {text.trim() ? (
             editingMessage ? (
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-primary composer-send-btn"
                 onClick={handleSend}
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  padding: 0,
-                  flexShrink: 0,
                   backgroundColor: 'var(--accent-cyan)',
                   color: '#080B14',
                 }}
                 title="Save changes"
               >
-                <Check size={18} strokeWidth={2.5} />
+                <Check size={17} strokeWidth={2.5} />
               </button>
             ) : (
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-primary composer-send-btn"
                 onClick={handleSend}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setShowScheduleModal(true);
                 }}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  padding: 0,
-                  flexShrink: 0,
-                }}
-                title="Send message (Right click to schedule)"
+                title="Send message (Right click / long press to schedule)"
               >
-                <Send size={18} />
+                <Send size={16} />
               </button>
             )
           ) : (
             <button
               type="button"
-              className="btn-icon"
+              className="composer-action-btn"
               onClick={startRecording}
               title="Record voice message"
               style={{
                 color: 'var(--accent)',
-                padding: '8px',
-                borderRadius: '50%',
               }}
             >
-              <Mic size={22} />
+              <Mic size={20} />
             </button>
           )}
         </div>
@@ -835,15 +870,16 @@ export default function MessageInput({
           className="fade-in"
           style={{
             position: 'absolute',
-            bottom: '70px',
-            right: '20px',
+            bottom: 'calc(66px + var(--safe-bottom))',
+            right: '10px',
             backgroundColor: '#0D1220',
             border: '1px solid var(--border-color)',
             borderRadius: '12px',
             padding: '10px',
             boxShadow: '0 8px 30px rgba(0, 0, 0, 0.65)',
             zIndex: 60,
-            width: '210px',
+            width: 'min(220px, calc(100vw - 20px))',
+            maxWidth: 'calc(100vw - 20px)',
           }}
         >
           <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase' }}>

@@ -693,7 +693,9 @@ export default function ChatWindow({
         className={currentTheme.isDoodle ? 'chat-wallpaper' : ''}
         style={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
+          overflowX: 'hidden',
           padding: '16px 0',
           display: 'flex',
           flexDirection: 'column',

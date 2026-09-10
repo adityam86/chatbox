@@ -36,6 +36,12 @@
   --danger: #FF5C70;
   --danger-hover: #E63956;
   --warning: #FFB84D;
+
+  /* Safe Area Insets for All Phone Aspect Ratios (iPhone Dynamic Island/Notch, Android Gesture Bar) */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 * {
@@ -46,20 +52,31 @@
   letter-spacing: -0.01em;
 }
 
-body {
+html, body {
   background-color: var(--bg-app);
   color: var(--text-primary);
   overflow: hidden;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  position: fixed; /* Prevents mobile rubber-banding and elastic bounce on iOS */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
 }
 
 #root {
   height: 100%;
+  height: 100dvh;
   width: 100%;
+  max-width: 100vw;
   display: flex;
+  overflow: hidden;
 }
 
 /* Custom Sleek Scrollbars */
@@ -254,3 +271,138 @@ input, textarea, button {
   0% { transform: scale(1); opacity: 0.9; }
   100% { transform: scale(1.15); opacity: 1; }
 }
+
+/* ========================================================
+   📱 Universal Mobile & Multi-Aspect Ratio Composer System
+   Compatible with 16:9, 18:9, 19.5:9, 20:9, 21:9 phones & compact widths
+   ======================================================== */
+
+.message-composer-wrapper {
+  padding: 8px 14px calc(10px + var(--safe-bottom)) 14px;
+  background-color: transparent;
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .message-composer-wrapper {
+    padding: 6px 8px calc(8px + var(--safe-bottom)) 8px;
+  }
+}
+
+.composer-pill {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px 4px 10px;
+  gap: 4px;
+  border-radius: 26px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: rgba(26, 34, 51, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  .composer-pill {
+    padding: 3px 4px 3px 8px;
+    gap: 3px;
+    border-radius: 24px;
+  }
+}
+
+.composer-pill:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 4px 24px rgba(124, 92, 255, 0.25);
+}
+
+.composer-text-input {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  padding: 8px 6px !important;
+  font-size: 16px !important; /* 16px prevents iOS Safari auto-zoom on focus! */
+  line-height: 1.35 !important;
+  border: none !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 641px) {
+  .composer-text-input {
+    font-size: 14.5px !important;
+    padding: 8px 8px !important;
+  }
+}
+
+.composer-text-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.composer-action-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 6px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.composer-action-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.composer-action-btn:active {
+  transform: scale(0.92);
+}
+
+.composer-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  padding: 0;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .composer-send-btn {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Active feature badges/chips above composer */
+.composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.15s ease-out;
+}
+

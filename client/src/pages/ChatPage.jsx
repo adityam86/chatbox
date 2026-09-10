@@ -462,8 +462,10 @@ export default function ChatPage() {
     <div
       style={{
         display: 'flex',
-        width: '100vw',
-        height: '100vh',
+        width: '100%',
+        maxWidth: '100vw',
+        height: '100%',
+        maxHeight: '100dvh',
         backgroundColor: 'var(--bg-app)',
         overflow: 'hidden',
         position: 'relative',
