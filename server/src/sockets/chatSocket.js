@@ -267,31 +267,50 @@ export function setupChatSocket(io) {
     });
 
     // 9. WebRTC 1-on-1 Audio & Video Call Signaling
-    socket.on('call:initiate', ({ targetUserId, callType, callerId, callerName, callerAvatar, signal }, callback) => {
-      console.log(`📞 Call initiated by ${callerName} to ${targetUserId} (${callType})`);
+    socket.on('call:initiate', ({ targetUserId, callType, callerId, callerUserId, callerName, callerAvatar, signal }, callback) => {
+      const caller = callerName || authenticatedUserId || 'User';
+      const cUserId = callerUserId || authenticatedUserId;
+      console.log(`📞 Call initiated by ${caller} (${cUserId}) to ${targetUserId} (${callType})`);
+
+      const payload = {
+        callerId: socket.id,
+        callerUserId: cUserId,
+        callerName: caller,
+        callerAvatar: callerAvatar || null,
+        callType: callType || 'video',
+        signal,
+      };
+
+      let delivered = false;
+
       if (onlineUsers.has(targetUserId)) {
         const recipientSockets = onlineUsers.get(targetUserId);
         recipientSockets.forEach((sid) => {
-          io.to(sid).emit('call:incoming', {
-            callerId,
-            callerName,
-            callerAvatar,
-            callType, // 'video' | 'audio'
-            signal,
-          });
+          io.to(sid).emit('call:incoming', payload);
         });
+        delivered = true;
+      } else if (io.sockets.sockets && io.sockets.sockets.has(targetUserId)) {
+        io.to(targetUserId).emit('call:incoming', payload);
+        delivered = true;
+      }
+
+      if (delivered) {
         if (typeof callback === 'function') callback({ success: true });
       } else {
+        console.warn(`User ${targetUserId} is offline or not found in onlineUsers.`);
         if (typeof callback === 'function') callback({ error: 'User is currently offline.' });
       }
     });
 
     socket.on('call:accept', ({ targetUserId, signal }) => {
-      console.log(`✅ Call accepted, sending answer signal to ${targetUserId}`);
+      console.log(`✅ Call accepted, routing answer signal to ${targetUserId}`);
+      const payload = { signal, fromUserId: authenticatedUserId, fromSocketId: socket.id };
       if (onlineUsers.has(targetUserId)) {
         onlineUsers.get(targetUserId).forEach((sid) => {
-          io.to(sid).emit('call:accepted', { signal });
+          io.to(sid).emit('call:accepted', payload);
         });
+      } else if (io.sockets.sockets && io.sockets.sockets.has(targetUserId)) {
+        io.to(targetUserId).emit('call:accepted', payload);
       }
     });
 
@@ -301,14 +320,19 @@ export function setupChatSocket(io) {
         onlineUsers.get(targetUserId).forEach((sid) => {
           io.to(sid).emit('call:declined');
         });
+      } else if (io.sockets.sockets && io.sockets.sockets.has(targetUserId)) {
+        io.to(targetUserId).emit('call:declined');
       }
     });
 
     socket.on('call:signal', ({ targetUserId, signal }) => {
+      const payload = { signal, fromUserId: authenticatedUserId, fromSocketId: socket.id };
       if (onlineUsers.has(targetUserId)) {
         onlineUsers.get(targetUserId).forEach((sid) => {
-          io.to(sid).emit('call:signal', { signal });
+          io.to(sid).emit('call:signal', payload);
         });
+      } else if (io.sockets.sockets && io.sockets.sockets.has(targetUserId)) {
+        io.to(targetUserId).emit('call:signal', payload);
       }
     });
 
@@ -318,6 +342,8 @@ export function setupChatSocket(io) {
         onlineUsers.get(targetUserId).forEach((sid) => {
           io.to(sid).emit('call:ended');
         });
+      } else if (io.sockets.sockets && io.sockets.sockets.has(targetUserId)) {
+        io.to(targetUserId).emit('call:ended');
       }
     });
 

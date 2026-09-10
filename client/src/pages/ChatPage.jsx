@@ -409,9 +409,9 @@ export default function ChatPage() {
       callType: incomingCall.callType,
       isCaller: false,
       targetUser: {
-        id: incomingCall.callerId,
-        username: incomingCall.callerName,
-        profile_image: incomingCall.callerAvatar,
+        id: incomingCall.callerUserId || incomingCall.callerId,
+        username: incomingCall.callerName || 'Caller',
+        profile_image: incomingCall.callerAvatar || null,
       },
       initialSignal: incomingCall.signal,
     });
@@ -420,7 +420,7 @@ export default function ChatPage() {
 
   const handleDeclineIncomingCall = () => {
     if (!incomingCall) return;
-    socket.emit('call:decline', { targetUserId: incomingCall.callerId });
+    socket.emit('call:decline', { targetUserId: incomingCall.callerUserId || incomingCall.callerId });
     setIncomingCall(null);
   };
 

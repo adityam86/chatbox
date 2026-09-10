@@ -13,6 +13,17 @@ import {
   X,
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
+
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  { urls: 'stun:stun.services.mozilla.com' },
+];
 
 export default function CallModal({
   callType, // 'video' | 'audio'
@@ -22,11 +33,13 @@ export default function CallModal({
   onEndCall,
 }) {
   const { socket } = useSocket();
+  const { user } = useAuth();
   const [micMuted, setMicMuted] = useState(false);
   const [videoOff, setVideoOff] = useState(callType === 'audio');
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [callStatus, setCallStatus] = useState(isCaller ? 'Ringing...' : 'Connecting...');
   const [callSeconds, setCallSeconds] = useState(0);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
   // Whiteboard State (Phase 5)
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
@@ -36,20 +49,43 @@ export default function CallModal({
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
   const timerIntervalRef = useRef(null);
+  const iceCandidatesQueueRef = useRef([]);
 
   useEffect(() => {
     let isCancelled = false;
 
     async function initWebRTC() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: callType === 'video',
-          audio: true,
-        });
+        const constraints = {
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+          video: callType === 'video' ? {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user',
+          } : false,
+        };
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (mediaErr) {
+          console.warn('Initial getUserMedia failed, attempting audio fallback:', mediaErr);
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' });
+          } catch {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            setVideoOff(true);
+          }
+        }
 
         if (isCancelled) {
           stream.getTracks().forEach((t) => t.stop());
@@ -57,14 +93,29 @@ export default function CallModal({
         }
 
         localStreamRef.current = stream;
-        if (localVideoRef.current) {
+        if (localVideoRef.current && callType === 'video') {
           localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch(() => {});
         }
 
         const pc = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+          iceServers: ICE_SERVERS,
+          iceCandidatePoolSize: 10,
         });
         peerConnectionRef.current = pc;
+
+        // Monitor ICE connection state
+        pc.oniceconnectionstatechange = () => {
+          console.log('📶 WebRTC ICE Connection State:', pc.iceConnectionState);
+          if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+            setCallStatus('Connected');
+          } else if (pc.iceConnectionState === 'failed') {
+            console.warn('ICE Connection failed, restarting ICE...');
+            if (pc.restartIce) pc.restartIce();
+          } else if (pc.iceConnectionState === 'disconnected') {
+            setCallStatus('Reconnecting...');
+          }
+        };
 
         // Add local tracks to peer connection
         stream.getTracks().forEach((track) => {
@@ -73,21 +124,36 @@ export default function CallModal({
 
         // Remote track received
         pc.ontrack = (event) => {
-          if (remoteVideoRef.current && event.streams[0]) {
-            remoteVideoRef.current.srcObject = event.streams[0];
-            setCallStatus('Connected');
+          console.log('📡 Remote media track received:', event.track.kind);
+          const remoteStream = event.streams[0] || new MediaStream([event.track]);
 
-            if (!timerIntervalRef.current) {
-              timerIntervalRef.current = setInterval(() => {
-                setCallSeconds((prev) => prev + 1);
-              }, 1000);
-            }
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = remoteStream;
+            remoteVideoRef.current.play().catch((err) => {
+              console.warn('Remote video autoplay blocked:', err);
+              setAutoplayBlocked(true);
+            });
+          }
+
+          if (remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = remoteStream;
+            remoteAudioRef.current.play().catch((err) => {
+              console.warn('Remote audio autoplay blocked:', err);
+              setAutoplayBlocked(true);
+            });
+          }
+
+          setCallStatus('Connected');
+          if (!timerIntervalRef.current) {
+            timerIntervalRef.current = setInterval(() => {
+              setCallSeconds((prev) => prev + 1);
+            }, 1000);
           }
         };
 
         // ICE candidate handler
         pc.onicecandidate = (event) => {
-          if (event.candidate && targetUser) {
+          if (event.candidate && targetUser?.id) {
             socket.emit('call:signal', {
               targetUserId: targetUser.id,
               signal: { type: 'candidate', candidate: event.candidate },
@@ -97,7 +163,10 @@ export default function CallModal({
 
         if (isCaller) {
           // Caller creates Offer
-          const offer = await pc.createOffer();
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: callType === 'video',
+          });
           await pc.setLocalDescription(offer);
 
           socket.emit(
@@ -106,6 +175,9 @@ export default function CallModal({
               targetUserId: targetUser.id,
               callType,
               callerId: socket.id,
+              callerUserId: user?.id,
+              callerName: user?.username || 'User',
+              callerAvatar: user?.profile_image || null,
               signal: offer,
             },
             (res) => {
@@ -118,6 +190,13 @@ export default function CallModal({
         } else if (initialSignal) {
           // Receiver receives Offer and sends Answer
           await pc.setRemoteDescription(new RTCSessionDescription(initialSignal));
+
+          // Flush queued candidates
+          while (iceCandidatesQueueRef.current.length > 0) {
+            const cand = iceCandidatesQueueRef.current.shift();
+            await pc.addIceCandidate(cand).catch((e) => console.warn('Queued candidate error:', e));
+          }
+
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
 
@@ -127,9 +206,11 @@ export default function CallModal({
           });
           setCallStatus('Connected');
 
-          timerIntervalRef.current = setInterval(() => {
-            setCallSeconds((prev) => prev + 1);
-          }, 1000);
+          if (!timerIntervalRef.current) {
+            timerIntervalRef.current = setInterval(() => {
+              setCallSeconds((prev) => prev + 1);
+            }, 1000);
+          }
         }
       } catch (err) {
         console.error('Failed to get user media for call:', err);
@@ -140,16 +221,51 @@ export default function CallModal({
 
     initWebRTC();
 
-    // Listen for incoming signals (answer, candidates)
+    // Listen for incoming signals (answer, offer, candidates)
     const handleSignal = async (data) => {
       const pc = peerConnectionRef.current;
       if (!pc) return;
 
       try {
-        if (data.signal?.type === 'answer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
-        } else if (data.signal?.candidate) {
-          await pc.addIceCandidate(new RTCIceCandidate(data.signal.candidate));
+        const signal = data.signal;
+        if (!signal) return;
+
+        if (signal.type === 'answer') {
+          if (pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal));
+            setCallStatus('Connected');
+
+            while (iceCandidatesQueueRef.current.length > 0) {
+              const cand = iceCandidatesQueueRef.current.shift();
+              await pc.addIceCandidate(cand).catch((e) => console.warn('Candidate error:', e));
+            }
+          }
+        } else if (signal.type === 'offer') {
+          if (pc.signalingState === 'stable' || pc.signalingState === 'have-local-offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal));
+
+            while (iceCandidatesQueueRef.current.length > 0) {
+              const cand = iceCandidatesQueueRef.current.shift();
+              await pc.addIceCandidate(cand).catch((e) => console.warn('Candidate error:', e));
+            }
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            socket.emit('call:signal', {
+              targetUserId: targetUser.id,
+              signal: answer,
+            });
+            setCallStatus('Connected');
+          }
+        } else if (signal.candidate) {
+          const candidate = new RTCIceCandidate(signal.candidate);
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            await pc.addIceCandidate(candidate).catch((e) => console.warn('addIceCandidate error:', e));
+          } else {
+            // Queue candidate until remote description is set
+            iceCandidatesQueueRef.current.push(candidate);
+          }
         }
       } catch (e) {
         console.error('Error handling WebRTC signal:', e);
@@ -162,11 +278,13 @@ export default function CallModal({
     };
 
     socket.on('call:signal', handleSignal);
+    socket.on('call:accepted', handleSignal);
     socket.on('call:ended', handleCallEnded);
 
     return () => {
       isCancelled = true;
       socket.off('call:signal', handleSignal);
+      socket.off('call:accepted', handleSignal);
       socket.off('call:ended', handleCallEnded);
       cleanupMedia();
     };
@@ -367,6 +485,47 @@ export default function CallModal({
           backgroundColor: '#0A0E1A',
         }}
       >
+        {/* Dedicated Remote Audio Player (active for both voice and video calls) */}
+        <audio
+          ref={remoteAudioRef}
+          autoPlay
+          playsInline
+        />
+
+        {/* Browser Autoplay Unmute Action Pill */}
+        {autoplayBlocked && (
+          <button
+            type="button"
+            onClick={() => {
+              if (remoteAudioRef.current) remoteAudioRef.current.play().catch(() => {});
+              if (remoteVideoRef.current) remoteVideoRef.current.play().catch(() => {});
+              setAutoplayBlocked(false);
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'var(--accent)',
+              color: '#FFFFFF',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '24px',
+              boxShadow: '0 8px 24px rgba(124, 92, 255, 0.5)',
+              zIndex: 100,
+              cursor: 'pointer',
+              fontSize: '13.5px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <Volume2 size={17} />
+            <span>Tap to Enable Audio / Video</span>
+          </button>
+        )}
+
         {/* Remote Video Feed */}
         {callType === 'video' ? (
           <video
