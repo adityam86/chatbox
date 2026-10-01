@@ -40,12 +40,12 @@ export function SocketProvider({ children }) {
     }
 
     // Handler for typing stop
-    function handleTypingStop({ conversationId, userId }) {
+    function handleTypingStop({ conversationId, username }) {
       setTypingUsers((prev) => {
         const current = prev[conversationId] || [];
         return {
           ...prev,
-          [conversationId]: current.filter((u) => u !== userId),
+          [conversationId]: current.filter((u) => u !== username),
         };
       });
     }

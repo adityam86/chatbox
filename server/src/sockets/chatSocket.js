@@ -136,7 +136,7 @@ export function setupChatSocket(io) {
 
     socket.on('typing:stop', ({ conversationId }) => {
       if (!checkRateLimit(authenticatedUserId, 'typing:stop', 1000, 3)) return;
-      socket.to(conversationId).emit('typing:stop', { conversationId, userId: authenticatedUserId });
+      socket.to(conversationId).emit('typing:stop', { conversationId, userId: authenticatedUserId, username: socket.user.username });
     });
 
     // 5. Send message in real-time
