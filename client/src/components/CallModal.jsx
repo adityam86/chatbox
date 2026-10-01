@@ -548,18 +548,33 @@ export default function CallModal({
           />
         ) : (
           <div style={{ textAlign: 'center' }}>
-            <img
-              src={targetUser?.profile_image || `https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=7C5CFF&color=fff`}
-              alt="Avatar"
-              style={{
-                width: '120px',
-                height: '120px',
-                borderRadius: '50%',
-                border: '3px solid var(--accent)',
-                boxShadow: '0 0 30px rgba(124, 92, 255, 0.4)',
-                marginBottom: '16px',
-              }}
-            />
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: '-8px',
+                  borderRadius: '50%',
+                  background: 'var(--aurora-gradient)',
+                  filter: 'blur(16px)',
+                  opacity: 0.5,
+                  animation: 'pulse 3s infinite alternate',
+                }}
+              />
+              <img
+                src={targetUser?.profile_image || `https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=7C5CFF&color=fff`}
+                alt="Avatar"
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  border: '3px solid var(--accent)',
+                  position: 'relative',
+                  zIndex: 1,
+                  boxShadow: '0 0 30px rgba(124, 92, 252, 0.4)',
+                  marginBottom: '16px',
+                }}
+              />
+            </div>
             <div style={{ fontSize: '18px', fontWeight: '600', color: '#fff' }}>
               {targetUser?.username || 'User'}
             </div>

@@ -151,10 +151,11 @@ input, textarea, button {
 .btn-icon:hover {
   color: var(--text-primary);
   background-color: rgba(255, 255, 255, 0.07);
+  transform: scale(1.03);
 }
 
 .btn-icon:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 /* Aurora Gradient Text */
@@ -231,6 +232,15 @@ input, textarea, button {
 .online-pulse {
   box-shadow: 0 0 0 3px #0C101A, 0 0 12px rgba(45, 226, 166, 0.35);
   animation: onlinePulse 3s ease-in-out infinite;
+}
+
+@keyframes onlinePresenceBreath {
+  0%, 100% { opacity: 0.5; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.online-presence-dot {
+  animation: onlinePresenceBreath 4s ease-in-out infinite;
 }
 
 @keyframes dotBounce {

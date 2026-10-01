@@ -356,8 +356,14 @@ export default function ChatWindow({
                 fontSize: '12px',
                 color: isTyping ? 'var(--accent)' : (isOnline ? 'var(--online)' : 'var(--text-secondary)'),
                 fontWeight: isOnline || isTyping ? '500' : '400',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
             >
+              {isOnline && !isTyping && (
+                <span className="online-presence-dot" style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--online)' }}></span>
+              )}
               {statusText}
             </div>
           </div>
