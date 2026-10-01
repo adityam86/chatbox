@@ -1,43 +1,43 @@
 :root {
-  /* Midnight Aurora Color System (Section 1) */
-  --bg-app: #080B14;
-  --bg-panel: #0D1220;
-  --bg-chat: #101625;
-  --bg-card: #141B2B;
-  --bg-input: #1A2233;
-  --bg-hover: #141B2B;
-  --bg-active: rgba(124, 92, 255, 0.12);
+  /* Premium Modern Communication Palette */
+  --bg-app: #0B0D14;
+  --bg-panel: #111522;
+  --bg-chat: #0F121B;
+  --bg-card: #171B27;
+  --bg-input: #111522;
+  --bg-hover: #171B27;
+  --bg-active: rgba(99, 102, 241, 0.12);
 
   /* Bubbles */
-  --bubble-sent: #6848E8;
-  --bubble-sent-gradient: linear-gradient(135deg, #7C5CFF 0%, #6848E8 100%);
-  --bubble-recv: #1A2233;
+  --bubble-sent: #6366F1;
+  --bubble-sent-gradient: #6366F1;
+  --bubble-recv: #171B27;
 
   /* Accents & Gradients */
-  --accent: #7C5CFF;
-  --accent-hover: #6C4AF5;
-  --accent-cyan: #38D9FF;
-  --aurora-gradient: linear-gradient(135deg, #7C5CFF 0%, #38D9FF 100%);
-  --aurora-gradient-hover: linear-gradient(135deg, #6C4AF5 0%, #20C7EE 100%);
+  --accent: #6366F1;
+  --accent-hover: #818CF8;
+  --accent-cyan: #8B5CF6;
+  --aurora-gradient: #6366F1;
+  --aurora-gradient-hover: #818CF8;
 
   /* Typography */
-  --text-primary: #F5F7FF;
-  --text-secondary: #929BB2;
-  --text-muted: #626B80;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 
   /* Borders & Highlights */
-  --border-color: rgba(255, 255, 255, 0.07);
-  --border-focus: rgba(124, 92, 255, 0.4);
+  --border-color: #252A38;
+  --border-focus: rgba(99, 102, 241, 0.4);
 
   /* Status Indicators */
-  --tick-sent: #929BB2;
-  --tick-read: #38D9FF;
-  --online: #39D98A;
-  --danger: #FF5C70;
-  --danger-hover: #E63956;
-  --warning: #FFB84D;
+  --tick-sent: #94A3B8;
+  --tick-read: #22C55E;
+  --online: #22C55E;
+  --danger: #EF4444;
+  --danger-hover: #DC2626;
+  --warning: #F59E0B;
 
-  /* Safe Area Insets for All Phone Aspect Ratios (iPhone Dynamic Island/Notch, Android Gesture Bar) */
+  /* Safe Area Insets */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-left: env(safe-area-inset-left, 0px);

@@ -27,6 +27,8 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Feature preferences
   const [pinnedChatIds, setPinnedChatIds] = useState([]);
@@ -110,8 +112,10 @@ export default function ChatPage() {
     joinConversation(chat.conversation_id);
 
     try {
-      const res = await api.get(`/chats/${chat.conversation_id}/messages`);
-      setMessages(res.data.messages || []);
+      const res = await api.get(`/chats/${chat.conversation_id}/messages?limit=50`);
+      const fetchedMessages = res.data.messages || [];
+      setMessages(fetchedMessages);
+      setHasMoreMessages(fetchedMessages.length === 50);
 
       setConversations((prev) =>
         prev.map((c) =>
@@ -127,6 +131,22 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error('Failed to load messages:', err);
+    }
+  };
+
+  const handleLoadMoreMessages = async () => {
+    if (!selectedChat || isLoadingMore || !messages.length) return;
+    setIsLoadingMore(true);
+    try {
+      const oldestMessageId = messages[0].id;
+      const res = await api.get(`/chats/${selectedChat.conversation_id}/messages?limit=50&before=${oldestMessageId}`);
+      const olderMessages = res.data.messages || [];
+      setMessages(prev => [...olderMessages, ...prev]);
+      setHasMoreMessages(olderMessages.length === 50);
+    } catch (err) {
+      console.error('Failed to load older messages:', err);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -225,32 +245,51 @@ export default function ChatPage() {
       );
     };
 
+    const handleMessageDeletedForMe = ({ messageId }) => {
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      loadConversations();
+    };
+
     // Incoming Call listener
     const handleIncomingCall = (callData) => {
       setIncomingCall(callData);
+    };
+
+    const handleReconnect = () => {
+      loadConversations();
+      if (selectedChat) {
+        api.get(`/chats/${selectedChat.conversation_id}/messages?limit=50`).then((res) => {
+          setMessages(res.data.messages || []);
+        });
+        socket.emit('conversation:join', selectedChat.conversation_id);
+      }
     };
 
     socket.on('message:new', handleNewMessage);
     socket.on('message:read_receipt', handleReadReceipt);
     socket.on('message:reaction_updated', handleReactionUpdated);
     socket.on('message:deleted', handleMessageDeleted);
+    socket.on('message:deleted_for_me', handleMessageDeletedForMe);
     socket.on('message:edited', handleMessageEdited);
     socket.on('conversation:updated', loadConversations);
     socket.on('call:incoming', handleIncomingCall);
+    socket.on('connect', handleReconnect);
 
     return () => {
       socket.off('message:new', handleNewMessage);
       socket.off('message:read_receipt', handleReadReceipt);
       socket.off('message:reaction_updated', handleReactionUpdated);
       socket.off('message:deleted', handleMessageDeleted);
+      socket.off('message:deleted_for_me', handleMessageDeletedForMe);
       socket.off('message:edited', handleMessageEdited);
       socket.off('conversation:updated', loadConversations);
       socket.off('call:incoming', handleIncomingCall);
+      socket.off('connect', handleReconnect);
     };
   }, [socket, selectedChat, user, mutedChatIds]);
 
   // Send message
-  const handleSendMessage = ({ message, messageType = 'text', mediaUrl = null, replyToMessageId = null }) => {
+  const handleSendMessage = ({ message, messageType = 'text', mediaUrl = null, replyToMessageId = null, disappearingTimer = 'off' }) => {
     if (!selectedChat) return;
 
     const payload = {
@@ -260,6 +299,7 @@ export default function ChatPage() {
       messageType,
       mediaUrl,
       replyToMessageId,
+      disappearingTimer,
     };
 
     socket.emit('message:send', payload, (res) => {
@@ -306,13 +346,25 @@ export default function ChatPage() {
     });
   };
 
-  const handleDeleteMessage = (message) => {
+  const handleDeleteMessage = (message, deleteType = 'everyone') => {
     if (!socket || !selectedChat) return;
-    socket.emit('message:delete', {
-      messageId: message.id,
-      conversationId: selectedChat.conversation_id,
-      userId: user.id,
-    });
+    
+    if (deleteType === 'me') {
+      socket.emit('message:delete_for_me', {
+        messageId: message.id,
+        conversationId: selectedChat.conversation_id,
+        userId: user.id,
+      });
+      // Optimistically remove
+      setMessages((prev) => prev.filter((m) => m.id !== message.id));
+      loadConversations();
+    } else {
+      socket.emit('message:delete', {
+        messageId: message.id,
+        conversationId: selectedChat.conversation_id,
+        userId: user.id,
+      });
+    }
   };
 
   const handleSaveEdit = (messageId, newContent) => {
@@ -533,6 +585,9 @@ export default function ChatPage() {
           <ChatWindow
             activeChat={selectedChat}
             messages={messages}
+            hasMore={hasMoreMessages}
+            isLoadingMore={isLoadingMore}
+            onLoadMore={handleLoadMoreMessages}
             replyingTo={replyingTo}
             starredMessageIds={starredMessageIds}
             isPinned={selectedChat && pinnedChatIds.includes(selectedChat.conversation_id)}

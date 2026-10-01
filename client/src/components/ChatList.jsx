@@ -618,6 +618,8 @@ export default function ChatList({
                     ? c.group_image || 'https://ui-avatars.com/api/?name=Group&background=1A2233&color=fff'
                     : c.recipient_profile_image || `https://ui-avatars.com/api/?name=${chatTitle}&background=7C5CFF&color=fff`;
 
+                const draftText = localStorage.getItem(`draft_${c.conversation_id}`);
+
                 return (
                   <div
                     key={c.conversation_id}
@@ -727,6 +729,13 @@ export default function ChatList({
                                 <span className="typing-dot" />
                               </span>
                             </span>
+                          ) : draftText ? (
+                            <>
+                              <span style={{ color: 'var(--danger)', fontWeight: '600' }}>Draft:</span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                                {draftText}
+                              </span>
+                            </>
                           ) : (
                             <>
                               {isOwnLastMessage && <StatusIndicator status={c.last_message_status} size={14} />}
@@ -749,15 +758,14 @@ export default function ChatList({
                           {c.unread_count > 0 && (
                             <span
                               style={{
-                                background: 'var(--aurora-gradient)',
+                                backgroundColor: 'var(--accent)',
                                 color: '#FFFFFF',
                                 fontSize: '11px',
-                                fontWeight: '700',
+                                fontWeight: '600',
                                 borderRadius: '10px',
-                                padding: '2px 7px',
-                                minWidth: '18px',
+                                padding: '1px 6px',
+                                minWidth: '16px',
                                 textAlign: 'center',
-                                boxShadow: '0 2px 8px rgba(124, 92, 255, 0.4)',
                               }}
                             >
                               {c.unread_count}

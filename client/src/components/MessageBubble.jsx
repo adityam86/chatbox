@@ -679,31 +679,21 @@ export default function MessageBubble({
           maxWidth: '68%',
           minWidth: '120px',
           background: isAi
-            ? 'linear-gradient(135deg, rgba(124, 92, 255, 0.35), rgba(56, 217, 255, 0.25))'
+            ? '#171B27'
             : isPriority
-            ? 'linear-gradient(135deg, rgba(255, 92, 112, 0.3), rgba(124, 92, 255, 0.35))'
+            ? '#171B27'
             : isOwnMessage
-            ? 'var(--bubble-sent-gradient)'
-            : 'var(--bubble-recv)',
-          color: isOwnMessage ? '#FFFFFF' : 'var(--text-primary)',
+            ? '#3730A3' // Specific requested outgoing color
+            : '#171B27', // Specific requested incoming color
+          color: '#F8FAFC', // White text
           borderRadius: '16px',
-          borderTopRightRadius: isOwnMessage ? '4px' : '16px',
-          borderTopLeftRadius: isOwnMessage ? '16px' : '4px',
-          padding: '8px 12px 7px 12px',
+          padding: '10px 14px',
           boxShadow: isPriority
-            ? '0 0 16px rgba(255, 92, 112, 0.45)'
+            ? '0 0 0 1px #EF4444'
             : isAi
-            ? '0 0 16px rgba(124, 92, 255, 0.35)'
-            : isOwnMessage
-            ? '0 4px 14px rgba(104, 72, 232, 0.25)'
-            : '0 2px 8px rgba(0, 0, 0, 0.25)',
-          border: isPriority
-            ? '1.5px solid #FF5C70'
-            : isAi
-            ? '1.5px solid var(--accent)'
-            : isOwnMessage
-            ? 'none'
-            : '1px solid rgba(255, 255, 255, 0.06)',
+            ? '0 0 0 1px #6366F1'
+            : '0 2px 4px rgba(0, 0, 0, 0.1)',
+          border: 'none',
           wordBreak: 'break-word',
           fontSize: '14.2px',
           lineHeight: '1.45',
@@ -1017,13 +1007,24 @@ export default function MessageBubble({
             <Forward size={16} />
           </button>
 
+          {/* Delete for me (all messages) */}
+          <button
+            type="button"
+            className="btn-icon"
+            style={{ padding: '4px', color: '#ff9c9c' }}
+            onClick={() => onDelete(message, 'me')}
+            title="Delete for me"
+          >
+            <Trash2 size={16} />
+          </button>
+
           {/* Delete for everyone (if own message) */}
           {isOwnMessage && (
             <button
               type="button"
               className="btn-icon"
               style={{ padding: '4px', color: 'var(--danger)' }}
-              onClick={() => onDelete(message)}
+              onClick={() => onDelete(message, 'everyone')}
               title="Delete for everyone"
             >
               <Trash2 size={16} />

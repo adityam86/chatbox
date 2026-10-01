@@ -20,7 +20,9 @@ import {
   FileDown,
 } from 'lucide-react';
 import SecurityCodeModal from './SecurityCodeModal';
+import UserSearchModal from './UserSearchModal';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const TIMER_OPTIONS = [
   { label: 'Off', value: 'off', desc: 'Messages stay in chat indefinitely' },
@@ -40,21 +42,68 @@ export default function ContactInfoDrawer({
   isGhostMode = false,
   onToggleGhostMode,
 }) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('media'); // 'media' | 'docs' | 'links'
   const [groupMembers, setGroupMembers] = useState([]);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [showTimerPicker, setShowTimerPicker] = useState(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
 
   const isGroup = chat?.type === 'group';
 
-  useEffect(() => {
-    if (isOpen && isGroup && chat?.conversation_id) {
+  const fetchMembers = () => {
+    if (isGroup && chat?.conversation_id) {
       api
         .get(`/chats/${chat.conversation_id}/members`)
         .then((res) => setGroupMembers(res.data.members || []))
         .catch((err) => console.error(err));
     }
+  };
+
+  useEffect(() => {
+    if (isOpen) fetchMembers();
   }, [isOpen, isGroup, chat?.conversation_id]);
+
+  const handleKick = async (memberId) => {
+    try {
+      await api.delete(`/chats/${chat.conversation_id}/members/${memberId}`);
+      fetchMembers();
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to remove member.');
+    }
+  };
+
+  const handleToggleAdmin = async (memberId, currentRole) => {
+    const newRole = currentRole === 'admin' ? 'member' : 'admin';
+    try {
+      await api.put(`/chats/${chat.conversation_id}/members/${memberId}`, { role: newRole });
+      fetchMembers();
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to update role.');
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (window.confirm('Are you sure you want to leave this group?')) {
+      try {
+        await api.delete(`/chats/${chat.conversation_id}/members/${user.id}`);
+        onClose();
+        window.location.reload(); // Refresh to remove chat from list
+      } catch (e) {
+        alert(e.response?.data?.error || 'Failed to leave group.');
+      }
+    }
+  };
+
+  const handleAddMember = async (selectedUser) => {
+    try {
+      await api.post(`/chats/${chat.conversation_id}/members`, { userId: selectedUser.id });
+      fetchMembers();
+      setIsAddMemberModalOpen(false);
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to add member.');
+    }
+  };
 
   if (!isOpen || !chat) return null;
 
@@ -200,40 +249,88 @@ export default function ContactInfoDrawer({
         {/* Group Members Section */}
         {isGroup && (
           <div style={{ padding: '16px 20px', backgroundColor: 'rgba(255, 255, 255, 0.02)', marginBottom: '10px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase' }}>
-              {groupMembers.length} participants
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                {groupMembers.length} participants
+              </div>
+              {groupMembers.find(mem => mem.id === user.id)?.role === 'admin' && (
+                <button
+                  onClick={() => setIsAddMemberModalOpen(true)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--accent)',
+                    color: 'var(--accent)',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  + Add Member
+                </button>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {groupMembers.map((m) => (
-                <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <img
-                      src={m.profile_image || `https://ui-avatars.com/api/?name=${m.username}&background=7C5CFF&color=fff`}
-                      alt={m.username}
-                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>{m.username}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{m.bio}</div>
+              {groupMembers.map((m) => {
+                const isMe = m.id === user.id;
+                const myRole = groupMembers.find(mem => mem.id === user.id)?.role;
+                const isAdmin = myRole === 'admin';
+                return (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                      <img
+                        src={m.profile_image || `https://ui-avatars.com/api/?name=${m.username}&background=7C5CFF&color=fff`}
+                        alt={m.username}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                      <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                          {m.username} {isMe && '(You)'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                          {m.bio}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {m.role === 'admin' && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            color: 'var(--accent-cyan)',
+                            backgroundColor: 'rgba(124, 92, 255, 0.15)',
+                            border: '1px solid var(--accent)',
+                            borderRadius: '6px',
+                            padding: '2px 7px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          Admin
+                        </span>
+                      )}
+                      {!isMe && isAdmin && (
+                        <div className="member-actions" style={{ display: 'flex', gap: '4px' }}>
+                          <button 
+                            onClick={() => handleToggleAdmin(m.id, m.role)}
+                            title={m.role === 'admin' ? "Dismiss Admin" : "Make Admin"}
+                            style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                          >
+                            {m.role === 'admin' ? '-Admin' : '+Admin'}
+                          </button>
+                          <button 
+                            onClick={() => handleKick(m.id)}
+                            title="Remove Member"
+                            style={{ background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                          >
+                            Kick
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {m.role === 'admin' && (
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        color: 'var(--accent-cyan)',
-                        backgroundColor: 'rgba(124, 92, 255, 0.15)',
-                        border: '1px solid var(--accent)',
-                        borderRadius: '6px',
-                        padding: '2px 7px',
-                        fontWeight: '600',
-                      }}
-                    >
-                      Group Admin
-                    </span>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -673,22 +770,31 @@ export default function ContactInfoDrawer({
         {/* Export Chat Transcript (Phase 5) */}
         <div style={{ padding: '16px 20px', backgroundColor: 'rgba(255, 255, 255, 0.02)', marginBottom: '16px' }}>
           <div
-            onClick={() => {
-              const header = `==============================================\nAurora ChatApp - Conversation with ${chatTitle}\nExported: ${new Date().toLocaleString()}\nTotal Messages: ${messages.length}\n==============================================\n\n`;
-              const body = messages.map((m) => {
-                const time = m.created_at ? new Date(m.created_at).toLocaleString() : 'Unknown';
-                const sender = m.sender_username || 'Unknown';
-                const content = m.message || m.content || (m.media_url ? `[Attachment: ${m.media_url}]` : '');
-                return `[${time}] ${sender}: ${content}`;
-              }).join('\n\n');
+            onClick={async () => {
+              try {
+                // Fetch all messages for a complete transcript
+                const res = await api.get(`/chats/${chat.conversation_id}/messages/all`);
+                const allMessages = res.data.messages || [];
 
-              const blob = new Blob([header + body], { type: 'text/plain;charset=utf-8' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `ChatApp_${chatTitle.replace(/[^a-zA-Z0-9]/g, '_')}_Transcript.txt`;
-              a.click();
-              URL.revokeObjectURL(url);
+                const header = `==============================================\nAurora ChatApp - Conversation with ${chatTitle}\nExported: ${new Date().toLocaleString()}\nTotal Messages: ${allMessages.length}\n==============================================\n\n`;
+                const body = allMessages.map((m) => {
+                  const time = m.created_at ? new Date(m.created_at).toLocaleString() : 'Unknown';
+                  const sender = m.sender_username || 'Unknown';
+                  const content = m.message || m.content || (m.media_url ? `[Attachment: ${m.media_url}]` : '');
+                  return `[${time}] ${sender}: ${content}`;
+                }).join('\n\n');
+
+                const blob = new Blob([header + body], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ChatApp_${chatTitle.replace(/[^a-zA-Z0-9]/g, '_')}_Transcript.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch (err) {
+                console.error('Failed to export chat transcript:', err);
+                alert('Failed to export chat transcript.');
+              }
             }}
             style={{
               display: 'flex',
@@ -728,6 +834,33 @@ export default function ContactInfoDrawer({
         </div>
       </div>
 
+      {/* Leave Group Button */}
+      {isGroup && (
+        <div style={{ padding: '16px 20px', backgroundColor: 'var(--bg-panel)', borderTop: '1px solid var(--border-color)' }}>
+          <button
+            onClick={handleLeaveGroup}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              backgroundColor: 'rgba(255, 76, 76, 0.1)',
+              color: 'var(--danger)',
+              border: '1px solid rgba(255, 76, 76, 0.3)',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={16} />
+            Leave Group
+          </button>
+        </div>
+      )}
+
       {/* Security Code Verification Modal */}
       <SecurityCodeModal
         isOpen={isSecurityModalOpen}
@@ -735,6 +868,15 @@ export default function ContactInfoDrawer({
         contactName={chatTitle}
         chatId={chat.conversation_id}
       />
+
+      {/* Add Member Modal */}
+      {isAddMemberModalOpen && (
+        <UserSearchModal
+          isOpen={isAddMemberModalOpen}
+          onClose={() => setIsAddMemberModalOpen(false)}
+          onSelectUser={handleAddMember}
+        />
+      )}
     </div>
   );
 }

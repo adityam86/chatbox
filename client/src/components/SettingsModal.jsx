@@ -649,10 +649,10 @@ export default function SettingsModal({ isOpen, onClose }) {
             {activeSection === 'about' && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <h3 className="aurora-text" style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
-                  Aurora Chat
+                  ChatBox
                 </h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                  Version 2.0.0 — Midnight Aurora Edition
+                  Version 2.0.0
                 </p>
                 <p style={{ maxWidth: '420px', margin: '0 auto', fontSize: '13.5px', lineHeight: '20px', color: 'var(--text-secondary)' }}>
                   Built with React, Node.js, Express, Socket.IO, WebRTC, and TiDB Cloud MySQL.

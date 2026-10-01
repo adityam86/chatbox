@@ -90,17 +90,29 @@ export default function MessageInput({
   }, [draftText]);
 
   useEffect(() => {
+    if (conversationId && !editingMessage && !replyingTo) {
+      const savedDraft = localStorage.getItem(`draft_${conversationId}`);
+      setText(savedDraft || '');
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
     if (replyingTo && inputRef.current) {
       inputRef.current.focus();
     }
   }, [replyingTo]);
 
-  // Handle Typing
   const handleInputChange = (e) => {
     const val = e.target.value;
     setText(val);
 
     if (conversationId) {
+      if (val) {
+        localStorage.setItem(`draft_${conversationId}`, val);
+      } else {
+        localStorage.removeItem(`draft_${conversationId}`);
+      }
+
       startTyping(conversationId);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
@@ -196,6 +208,9 @@ export default function MessageInput({
     }
 
     setText('');
+    if (conversationId) {
+      localStorage.removeItem(`draft_${conversationId}`);
+    }
     setIsViewOnce(false);
     setIsPriority(false);
     setShowEmojiPicker(false);

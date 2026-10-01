@@ -17,6 +17,12 @@ CREATE TABLE IF NOT EXISTS `users` (
   `bio` VARCHAR(255) DEFAULT 'Hey there! I am using ChatApp.',
   `is_online` BOOLEAN DEFAULT FALSE,
   `last_seen` DATETIME DEFAULT NULL,
+  
+  -- Privacy Preferences
+  `privacy_last_seen` ENUM('everyone', 'contacts', 'nobody') DEFAULT 'everyone',
+  `privacy_online` ENUM('everyone', 'contacts', 'nobody') DEFAULT 'everyone',
+  `privacy_read_receipts` BOOLEAN DEFAULT TRUE,
+
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -65,11 +71,13 @@ CREATE TABLE IF NOT EXISTS `messages` (
   `reply_to_message_id` VARCHAR(36) DEFAULT NULL,
   `status` ENUM('sent', 'delivered', 'read') NOT NULL DEFAULT 'sent',
   `is_deleted` BOOLEAN DEFAULT FALSE,
+  `expires_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `idx_messages_conversation` (`conversation_id`, `created_at`),
   INDEX `idx_messages_sender` (`sender_id`),
+  INDEX `idx_messages_expires` (`expires_at`),
   CONSTRAINT `fk_messages_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_messages_reply` FOREIGN KEY (`reply_to_message_id`) REFERENCES `messages` (`id`) ON DELETE SET NULL
@@ -142,4 +150,16 @@ CREATE TABLE IF NOT EXISTS `chat_preferences` (
   UNIQUE KEY `uq_user_conv_pref` (`user_id`, `conversation_id`),
   CONSTRAINT `fk_cp_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cp_conv` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 10. Deleted Messages (Delete for me)
+CREATE TABLE IF NOT EXISTS `deleted_messages` (
+  `id` VARCHAR(36) NOT NULL,
+  `user_id` VARCHAR(36) NOT NULL,
+  `message_id` VARCHAR(36) NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_del_user_msg` (`user_id`, `message_id`),
+  CONSTRAINT `fk_del_msg_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_del_msg_msg` FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

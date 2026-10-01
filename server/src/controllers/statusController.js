@@ -37,12 +37,23 @@ export async function getStatuses(req, res) {
     const currentUserId = req.user.id;
 
     // Get statuses created within the last 24 hours
+    // Only show statuses of the current user OR users they share a conversation with
     const [rows] = await pool.query(
       `SELECT s.*, u.username, u.profile_image
        FROM statuses s
        INNER JOIN users u ON s.user_id = u.id
        WHERE s.created_at >= NOW() - INTERVAL 24 HOUR
-       ORDER BY s.created_at DESC`
+       AND (
+         s.user_id = ?
+         OR s.user_id IN (
+           SELECT cm2.user_id 
+           FROM conversation_members cm1
+           INNER JOIN conversation_members cm2 ON cm1.conversation_id = cm2.conversation_id
+           WHERE cm1.user_id = ?
+         )
+       )
+       ORDER BY s.created_at DESC`,
+       [currentUserId, currentUserId]
     );
 
     // Group by user
@@ -75,5 +86,26 @@ export async function getStatuses(req, res) {
   } catch (error) {
     console.error('getStatuses error:', error);
     return res.status(500).json({ error: 'Failed to fetch statuses.' });
+  }
+}
+
+export async function deleteStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const currentUserId = req.user.id;
+    
+    const [result] = await pool.query(
+      'DELETE FROM statuses WHERE id = ? AND user_id = ?',
+      [id, currentUserId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Status not found or unauthorized.' });
+    }
+
+    return res.status(200).json({ message: 'Status deleted successfully.' });
+  } catch (error) {
+    console.error('deleteStatus error:', error);
+    return res.status(500).json({ error: 'Failed to delete status.' });
   }
 }

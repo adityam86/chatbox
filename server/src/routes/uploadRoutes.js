@@ -10,9 +10,17 @@ router.post('/', authenticateToken, upload.single('file'), (req, res) => {
       return res.status(400).json({ error: 'No file uploaded.' });
     }
 
-    const host = req.get('host');
-    const protocol = req.protocol;
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    let fileUrl;
+    
+    if (req.file.location) {
+      // S3 upload returns location
+      fileUrl = req.file.location;
+    } else {
+      // Local upload fallback
+      const host = req.get('host');
+      const protocol = req.protocol;
+      fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    }
 
     const isAudio = req.file.mimetype.startsWith('audio/');
     const isImage = req.file.mimetype.startsWith('image/');

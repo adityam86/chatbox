@@ -20,11 +20,21 @@ export function getSocket() {
 
 export function connectSocket(user) {
   const s = getSocket();
+  const token = localStorage.getItem('chatapp_token');
+  if (token) {
+    s.auth = { token };
+  }
+  
+  s.off('connect', s._handleConnect);
+  s._handleConnect = () => {
+    if (user) {
+      s.emit('user:join');
+    }
+  };
+  s.on('connect', s._handleConnect);
+
   if (!s.connected) {
     s.connect();
-    if (user) {
-      s.emit('user:join', user);
-    }
   }
   return s;
 }

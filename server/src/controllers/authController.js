@@ -48,7 +48,7 @@ export async function register(req, res) {
 
     const token = jwt.sign(
       { id: userId, username: username.trim(), email: email.trim().toLowerCase() },
-      process.env.JWT_SECRET || 'super_secret_chatapp_jwt_key_2026_change_in_production',
+      process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
@@ -104,7 +104,7 @@ export async function login(req, res) {
 
     const token = jwt.sign(
       { id: user.id, username: user.username, email: user.email },
-      process.env.JWT_SECRET || 'super_secret_chatapp_jwt_key_2026_change_in_production',
+      process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
@@ -116,6 +116,9 @@ export async function login(req, res) {
       bio: user.bio,
       is_online: 1,
       last_seen: new Date(),
+      privacy_last_seen: user.privacy_last_seen,
+      privacy_online: user.privacy_online,
+      privacy_read_receipts: user.privacy_read_receipts,
     };
 
     return res.status(200).json({
@@ -132,7 +135,7 @@ export async function login(req, res) {
 export async function getMe(req, res) {
   try {
     const [users] = await pool.query(
-      'SELECT id, username, email, profile_image, bio, is_online, last_seen, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, profile_image, bio, is_online, last_seen, privacy_last_seen, privacy_online, privacy_read_receipts, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 

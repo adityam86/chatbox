@@ -36,6 +36,9 @@ const WALLPAPERS = {
 export default function ChatWindow({
   activeChat,
   messages,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
   replyingTo,
   starredMessageIds = [],
   isPinned = false,
@@ -59,6 +62,8 @@ export default function ChatWindow({
   const { user } = useAuth();
   const { isUserOnline, typingUsers } = useSocket();
   const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const previousScrollHeightRef = useRef(0);
 
   const [lightboxImage, setLightboxImage] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -108,8 +113,35 @@ export default function ChatWindow({
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only scroll to bottom on initial load or if a new message was appended
+    if (messages.length > 0) {
+      if (previousScrollHeightRef.current === 0) {
+        messagesEndRef.current?.scrollIntoView();
+      } else if (scrollContainerRef.current) {
+        // If we loaded older messages (scroll height increased but we are near the top)
+        const container = scrollContainerRef.current;
+        if (container.scrollTop < 100 && container.scrollHeight > previousScrollHeightRef.current) {
+          container.scrollTop = container.scrollHeight - previousScrollHeightRef.current;
+        } else {
+           // Probably a new message at the bottom
+           // messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      previousScrollHeightRef.current = scrollContainerRef.current?.scrollHeight || 0;
+    } else {
+      previousScrollHeightRef.current = 0;
+    }
   }, [messages]);
+
+  // When a new message arrives, we want to scroll to bottom if we are already at the bottom
+  useEffect(() => {
+    if (messages.length > 0 && previousScrollHeightRef.current > 0) {
+      const container = scrollContainerRef.current;
+      if (container && (container.scrollHeight - container.scrollTop - container.clientHeight < 150)) {
+         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [messages.length]);
 
   if (!activeChat) {
     return (
@@ -690,6 +722,7 @@ export default function ChatWindow({
 
       {/* Message Feed */}
       <div
+        ref={scrollContainerRef}
         className={currentTheme.isDoodle ? 'chat-wallpaper' : ''}
         style={{
           flex: 1,
@@ -702,6 +735,19 @@ export default function ChatWindow({
           backgroundColor: currentTheme.bg,
         }}
       >
+        {hasMore && (
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <button
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              className="btn-secondary"
+              style={{ padding: '6px 16px', fontSize: '12.5px', borderRadius: '16px' }}
+            >
+              {isLoadingMore ? 'Loading...' : 'Load older messages'}
+            </button>
+          </div>
+        )}
+
         {/* End-to-End Encryption Padlock Notice */}
         <div
           style={{
@@ -837,7 +883,9 @@ export default function ChatWindow({
           conversationId={activeChat.conversation_id}
           replyingTo={replyingTo}
           onClearReply={onClearReply}
-          onSendMessage={onSendMessage}
+          onSendMessage={(payload) => {
+            onSendMessage({ ...payload, disappearingTimer });
+          }}
           onFileSelected={onFileSelected}
           onOpenWatchTogether={() => setIsWatchModalOpen(true)}
           editingMessage={editingMessage}

@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const SLIDE_DURATION = 5000; // 5 seconds per slide
 
 export default function StatusViewerModal({ statusGroup, isOpen, onClose }) {
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -62,6 +65,18 @@ export default function StatusViewerModal({ statusGroup, isOpen, onClose }) {
       setProgress(0);
     } else {
       onClose();
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (window.confirm('Delete this status update?')) {
+      try {
+        await api.delete(`/statuses/${currentStatus.id}`);
+        onClose(); // In a real app we'd refresh the parent's status list instead of just closing
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to delete status.');
+      }
     }
   };
 
@@ -172,14 +187,27 @@ export default function StatusViewerModal({ statusGroup, isOpen, onClose }) {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="btn-icon"
-            onClick={onClose}
-            style={{ color: '#fff', backgroundColor: 'rgba(0,0,0,0.3)' }}
-          >
-            <X size={22} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {statusGroup.user?.id === user?.id && (
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={handleDelete}
+                style={{ color: '#ff4c4c', backgroundColor: 'rgba(0,0,0,0.3)', marginRight: '8px' }}
+                title="Delete Status"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={onClose}
+              style={{ color: '#fff', backgroundColor: 'rgba(0,0,0,0.3)' }}
+            >
+              <X size={22} />
+            </button>
+          </div>
         </div>
 
         {/* Content View */}

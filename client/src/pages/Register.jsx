@@ -51,7 +51,7 @@ export default function Register() {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'var(--bg-app)',
-        backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(124, 92, 255, 0.12) 0%, transparent 60%)',
+        backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 60%)',
       }}
     >
       <div
@@ -59,35 +59,35 @@ export default function Register() {
         style={{
           width: '90%',
           maxWidth: '440px',
-          backgroundColor: 'rgba(13, 18, 32, 0.92)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '20px',
-          padding: '32px 28px',
-          boxShadow: '0 16px 48px rgba(0, 0, 0, 0.6)',
-          border: '1px solid rgba(124, 92, 255, 0.25)',
+          backgroundColor: 'rgba(17, 21, 34, 0.6)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '40px 32px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
         }}
       >
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div
             style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
               background: 'var(--aurora-gradient)',
               color: '#FFFFFF',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: '12px',
-              boxShadow: '0 0 24px rgba(124, 92, 255, 0.45)',
+              marginBottom: '16px',
+              boxShadow: '0 4px 16px rgba(99, 102, 241, 0.3)',
             }}
           >
-            <MessageSquare size={32} />
+            <MessageSquare size={24} />
           </div>
-          <h1 className="aurora-text" style={{ fontSize: '24px', fontWeight: '700' }}>Create an Account</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '13.5px', marginTop: '4px' }}>
-            Join Aurora Chat to connect and talk
+          <h1 style={{ fontSize: '24px', fontWeight: '600', color: '#F8FAFC', letterSpacing: '-0.5px' }}>Create an Account</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '6px' }}>
+            Conversations,<br/>without the clutter.
           </p>
         </div>
 

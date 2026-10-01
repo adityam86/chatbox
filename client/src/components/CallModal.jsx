@@ -25,6 +25,14 @@ const ICE_SERVERS = [
   { urls: 'stun:stun.services.mozilla.com' },
 ];
 
+if (import.meta.env.VITE_TURN_URL) {
+  ICE_SERVERS.push({
+    urls: import.meta.env.VITE_TURN_URL,
+    username: import.meta.env.VITE_TURN_USERNAME,
+    credential: import.meta.env.VITE_TURN_CREDENTIAL,
+  });
+}
+
 export default function CallModal({
   callType, // 'video' | 'audio'
   isCaller,

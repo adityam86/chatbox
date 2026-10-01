@@ -43,12 +43,14 @@ export async function getUserConversations(req, res) {
         FROM messages m1
         INNER JOIN (
           SELECT conversation_id, MAX(created_at) AS max_created
-          FROM messages
+          FROM messages m_inner
+          WHERE m_inner.id NOT IN (SELECT message_id FROM deleted_messages WHERE user_id = ?)
           GROUP BY conversation_id
         ) latest ON m1.conversation_id = latest.conversation_id AND m1.created_at = latest.max_created
+        WHERE m1.id NOT IN (SELECT message_id FROM deleted_messages WHERE user_id = ?)
       ) lm ON c.id = lm.conversation_id
       ORDER BY COALESCE(lm.created_at, c.updated_at) DESC`,
-      [currentUserId, currentUserId, currentUserId]
+      [currentUserId, currentUserId, currentUserId, currentUserId, currentUserId]
     );
 
     return res.status(200).json({ conversations: rows });
@@ -119,6 +121,9 @@ export async function getConversationMessages(req, res) {
     const currentUserId = req.user.id;
     const { id: conversationId } = req.params;
 
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const beforeId = req.query.before;
+
     // Verify membership
     const [membership] = await pool.query(
       'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ?',
@@ -129,8 +134,21 @@ export async function getConversationMessages(req, res) {
       return res.status(403).json({ error: 'You are not a member of this conversation.' });
     }
 
+    let dateCondition = '';
+    const queryParams = [conversationId];
+
+    if (beforeId) {
+      const [beforeMsg] = await pool.query('SELECT created_at FROM messages WHERE id = ?', [beforeId]);
+      if (beforeMsg.length > 0) {
+        dateCondition = 'AND m.created_at < ?';
+        queryParams.push(beforeMsg[0].created_at);
+      }
+    }
+
+    queryParams.push(currentUserId, limit);
+
     // Fetch messages with sender info and reply details
-    const [messages] = await pool.query(
+    const [messagesDesc] = await pool.query(
       `SELECT 
         m.id,
         m.conversation_id,
@@ -150,10 +168,14 @@ export async function getConversationMessages(req, res) {
       INNER JOIN users u ON m.sender_id = u.id
       LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
       LEFT JOIN users ru ON rm.sender_id = ru.id
-      WHERE m.conversation_id = ?
-      ORDER BY m.created_at ASC`,
-      [conversationId]
+      WHERE m.conversation_id = ? ${dateCondition}
+        AND m.id NOT IN (SELECT message_id FROM deleted_messages WHERE user_id = ?)
+      ORDER BY m.created_at DESC
+      LIMIT ?`,
+      queryParams
     );
+
+    const messages = messagesDesc.reverse();
 
     // Fetch reactions for messages if any exist
     if (messages.length > 0) {
@@ -290,3 +312,157 @@ export async function clearConversationMessages(req, res) {
   }
 }
 
+export async function addMemberToGroup(req, res) {
+  try {
+    const { id: conversationId } = req.params;
+    const { userId } = req.body;
+    const currentUserId = req.user.id;
+
+    // Must be admin to add members
+    const [adminCheck] = await pool.query(
+      "SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND role = 'admin'",
+      [conversationId, currentUserId]
+    );
+    if (adminCheck.length === 0) {
+      return res.status(403).json({ error: 'Only admins can add members.' });
+    }
+
+    // Check if user exists
+    const [userExists] = await pool.query('SELECT id FROM users WHERE id = ?', [userId]);
+    if (userExists.length === 0) return res.status(404).json({ error: 'User not found.' });
+
+    // Check if already in group
+    const [memberExists] = await pool.query(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, userId]
+    );
+    if (memberExists.length > 0) return res.status(400).json({ error: 'User is already a member.' });
+
+    await pool.query(
+      "INSERT INTO conversation_members (id, conversation_id, user_id, role) VALUES (?, ?, ?, 'member')",
+      [uuidv4(), conversationId, userId]
+    );
+
+    return res.status(200).json({ message: 'Member added successfully.' });
+  } catch (error) {
+    console.error('addMemberToGroup error:', error);
+    return res.status(500).json({ error: 'Failed to add member.' });
+  }
+}
+
+export async function removeMemberFromGroup(req, res) {
+  try {
+    const { id: conversationId, userId } = req.params;
+    const currentUserId = req.user.id;
+
+    const isSelfLeave = userId === currentUserId;
+
+    if (!isSelfLeave) {
+      // Must be admin to kick someone
+      const [adminCheck] = await pool.query(
+        "SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND role = 'admin'",
+        [conversationId, currentUserId]
+      );
+      if (adminCheck.length === 0) {
+        return res.status(403).json({ error: 'Only admins can remove members.' });
+      }
+    }
+
+    // Prevent last admin from leaving if there are other members
+    if (isSelfLeave) {
+      const [myRole] = await pool.query(
+        'SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ?',
+        [conversationId, currentUserId]
+      );
+      if (myRole.length > 0 && myRole[0].role === 'admin') {
+        const [otherAdmins] = await pool.query(
+          "SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id != ? AND role = 'admin'",
+          [conversationId, currentUserId]
+        );
+        const [allMembers] = await pool.query(
+          "SELECT id FROM conversation_members WHERE conversation_id = ?",
+          [conversationId]
+        );
+        if (otherAdmins.length === 0 && allMembers.length > 1) {
+          return res.status(400).json({ error: 'Please assign another admin before leaving.' });
+        }
+      }
+    }
+
+    await pool.query(
+      'DELETE FROM conversation_members WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, userId]
+    );
+
+    // If group is empty, we could theoretically delete the conversation, but leaving it is fine.
+    
+    return res.status(200).json({ message: isSelfLeave ? 'Left group successfully.' : 'Member removed.' });
+  } catch (error) {
+    console.error('removeMemberFromGroup error:', error);
+    return res.status(500).json({ error: 'Failed to remove member.' });
+  }
+}
+
+export async function updateMemberRole(req, res) {
+  try {
+    const { id: conversationId, userId } = req.params;
+    const { role } = req.body;
+    const currentUserId = req.user.id;
+
+    if (!['admin', 'member'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role.' });
+    }
+
+    // Must be admin
+    const [adminCheck] = await pool.query(
+      "SELECT role FROM conversation_members WHERE conversation_id = ? AND user_id = ? AND role = 'admin'",
+      [conversationId, currentUserId]
+    );
+    if (adminCheck.length === 0) {
+      return res.status(403).json({ error: 'Only admins can change roles.' });
+    }
+
+    await pool.query(
+      'UPDATE conversation_members SET role = ? WHERE conversation_id = ? AND user_id = ?',
+      [role, conversationId, userId]
+    );
+
+    return res.status(200).json({ message: 'Role updated successfully.' });
+  } catch (error) {
+    console.error('updateMemberRole error:', error);
+    return res.status(500).json({ error: 'Failed to update role.' });
+  }
+}
+
+export async function getAllConversationMessages(req, res) {
+  try {
+    const { id: conversationId } = req.params;
+    const currentUserId = req.user.id;
+
+    // Verify membership
+    const [membership] = await pool.query(
+      'SELECT id FROM conversation_members WHERE conversation_id = ? AND user_id = ?',
+      [conversationId, currentUserId]
+    );
+    if (membership.length === 0) {
+      return res.status(403).json({ error: 'You are not a member of this conversation.' });
+    }
+
+    const [messages] = await pool.query(
+      `SELECT m.*, u.username AS sender_username
+       FROM messages m
+       INNER JOIN users u ON m.sender_id = u.id
+       WHERE m.conversation_id = ?
+       AND m.id NOT IN (
+         SELECT message_id FROM deleted_messages WHERE user_id = ?
+       )
+       ORDER BY m.created_at ASC`,
+      [conversationId, currentUserId]
+    );
+
+    return res.status(200).json({ messages });
+  } catch (error) {
+    console.error('getAllConversationMessages error:', error);
+    return res.status(500).json({ error: 'Failed to fetch all messages.' });
+  }
+}

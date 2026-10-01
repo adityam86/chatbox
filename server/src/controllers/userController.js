@@ -1,4 +1,30 @@
 import pool from '../config/db.js';
+import bcrypt from 'bcryptjs';
+
+export async function updatePassword(req, res) {
+  try {
+    const currentUserId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    const [users] = await pool.query('SELECT password_hash FROM users WHERE id = ?', [currentUserId]);
+    if (users.length === 0) return res.status(404).json({ error: 'User not found.' });
+
+    const isValid = await bcrypt.compare(currentPassword, users[0].password_hash);
+    if (!isValid) return res.status(401).json({ error: 'Incorrect current password.' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [hashed, currentUserId]);
+
+    return res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('updatePassword error:', error);
+    return res.status(500).json({ error: 'Failed to update password.' });
+  }
+}
 
 export async function searchUsers(req, res) {
   try {
@@ -49,7 +75,7 @@ export async function getUserProfile(req, res) {
 export async function updateProfile(req, res) {
   try {
     const currentUserId = req.user.id;
-    const { bio, profile_image, username } = req.body;
+    const { bio, profile_image, username, privacy_last_seen, privacy_online, privacy_read_receipts } = req.body;
 
     const updates = [];
     const values = [];
@@ -62,6 +88,21 @@ export async function updateProfile(req, res) {
     if (profile_image !== undefined) {
       updates.push('profile_image = ?');
       values.push(profile_image);
+    }
+
+    if (privacy_last_seen !== undefined) {
+      updates.push('privacy_last_seen = ?');
+      values.push(privacy_last_seen);
+    }
+
+    if (privacy_online !== undefined) {
+      updates.push('privacy_online = ?');
+      values.push(privacy_online);
+    }
+
+    if (privacy_read_receipts !== undefined) {
+      updates.push('privacy_read_receipts = ?');
+      values.push(privacy_read_receipts ? 1 : 0);
     }
 
     if (username !== undefined && username.trim().length >= 3) {
@@ -89,7 +130,7 @@ export async function updateProfile(req, res) {
     );
 
     const [updatedUser] = await pool.query(
-      'SELECT id, username, email, profile_image, bio, is_online, last_seen FROM users WHERE id = ?',
+      'SELECT id, username, email, profile_image, bio, is_online, last_seen, privacy_last_seen, privacy_online, privacy_read_receipts FROM users WHERE id = ?',
       [currentUserId]
     );
 
