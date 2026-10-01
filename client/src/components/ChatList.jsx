@@ -77,8 +77,11 @@ export default function ChatList({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: 'var(--bg-app)',
-        borderRight: '1px solid var(--border-color)',
+        backgroundColor: 'rgba(12, 16, 27, 0.90)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+        boxShadow: '8px 0 35px rgba(0, 0, 0, 0.16)',
+        position: 'relative',
+        zIndex: 10,
       }}
     >
       {/* Top Header */}
@@ -88,10 +91,11 @@ export default function ChatList({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '10px 16px',
-          backgroundColor: 'var(--bg-panel)',
+          backgroundColor: 'rgba(17, 23, 37, 0.72)',
+          backdropFilter: 'blur(18px)',
           height: '62px',
           flexShrink: 0,
-          borderBottom: '1px solid var(--border-color)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.055)',
         }}
       >
         {/* User Info */}
@@ -224,16 +228,7 @@ export default function ChatList({
                 onOpenCreateStatus();
               }
             }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '10px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              marginBottom: '16px',
-              backgroundColor: 'var(--bg-hover)',
-            }}
+            className="status-card"
           >
             <div style={{ position: 'relative' }}>
               <img
@@ -341,18 +336,7 @@ export default function ChatList({
         <>
           {/* Search Bar */}
           <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: 'var(--bg-input)',
-                borderRadius: '20px',
-                padding: '7px 14px',
-                gap: '10px',
-                border: '1px solid var(--border-color)',
-                transition: 'border-color 0.2s',
-              }}
-            >
+            <div className="search-field">
               <Search size={16} style={{ color: 'var(--text-secondary)' }} />
               <input
                 type="text"
@@ -364,6 +348,8 @@ export default function ChatList({
                   color: 'var(--text-primary)',
                   flex: 1,
                   fontSize: '13.5px',
+                  border: 'none',
+                  outline: 'none',
                 }}
               />
             </div>
@@ -395,18 +381,7 @@ export default function ChatList({
                   key={f.id}
                   type="button"
                   onClick={() => setSelectedFolder(f.id)}
-                  style={{
-                    padding: '4px 11px',
-                    borderRadius: '16px',
-                    backgroundColor: isSelected ? 'var(--accent)' : 'rgba(255, 255, 255, 0.05)',
-                    color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
-                    fontSize: '11.5px',
-                    fontWeight: isSelected ? '600' : '400',
-                    border: 'none',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s ease',
-                  }}
+                  className={`filter-pill ${isSelected ? 'active' : ''}`}
                 >
                   {f.label}
                 </button>
@@ -624,30 +599,7 @@ export default function ChatList({
                   <div
                     key={c.conversation_id}
                     onClick={() => onSelectChat(c)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: isSelected ? '12px 16px 12px 13px' : '12px 16px',
-                      cursor: 'pointer',
-                      backgroundColor: isSelected ? 'var(--bg-active)' : 'transparent',
-                      borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
-                      borderBottom: '1px solid var(--border-color)',
-                      gap: '12px',
-                      transition: 'all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                      transform: 'translateX(0)',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
-                        e.currentTarget.style.transform = 'translateX(3px)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.transform = 'translateX(0)';
-                      }
-                    }}
+                    className={`chat-row ${isSelected ? 'active' : ''}`}
                   >
                     {/* Avatar with Pulsing Online Badge */}
                     <div style={{ position: 'relative' }}>

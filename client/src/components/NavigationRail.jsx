@@ -138,8 +138,10 @@ export default function NavigationRail({
       style={{
         width: '68px',
         height: '100%',
-        backgroundColor: '#0D1220',
-        borderRight: '1px solid var(--border-color)',
+        backgroundColor: 'rgba(10, 14, 25, 0.82)',
+        backdropFilter: 'blur(18px)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.055)',
+        boxShadow: 'inset -1px 0 0 rgba(255, 255, 255, 0.01)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -181,30 +183,9 @@ export default function NavigationRail({
                   type="button"
                   onClick={() => onSelectTab(item.id)}
                   title={item.label}
-                  style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '14px',
-                    background: isActive ? 'var(--bg-glass)' : 'transparent',
-                    border: isActive ? '1px solid var(--border-focus)' : '1px solid transparent',
-                    color: isActive ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                    boxShadow: isActive ? '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 12px rgba(124, 92, 252, 0.1)' : 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    position: 'relative',
-                    transform: isActive ? 'scale(1)' : 'scale(0.96)',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
-                  }}
+                  className={`nav-rail-item ${isActive ? 'active' : ''}`}
                 >
-                  <Icon size={22} />
+                  <Icon size={isActive ? 24 : 22} style={{ transition: 'all 0.18s ease' }} />
 
                   {Boolean(item.badge) && item.badge > 0 && (
                     <span
@@ -239,29 +220,9 @@ export default function NavigationRail({
           type="button"
           onClick={onOpenSettings}
           title="Settings"
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '14px',
-            background: activeTab === 'settings' ? 'var(--bg-glass)' : 'transparent',
-            border: activeTab === 'settings' ? '1px solid var(--border-focus)' : '1px solid transparent',
-            color: activeTab === 'settings' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-            boxShadow: activeTab === 'settings' ? '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 12px rgba(124, 92, 252, 0.1)' : 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            transform: activeTab === 'settings' ? 'scale(1)' : 'scale(0.96)',
-          }}
-          onMouseEnter={(e) => {
-            if (activeTab !== 'settings') e.currentTarget.style.color = 'var(--text-primary)';
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'settings') e.currentTarget.style.color = 'var(--text-secondary)';
-          }}
+          className={`nav-rail-item ${activeTab === 'settings' ? 'active' : ''}`}
         >
-          <Settings size={22} />
+          <Settings size={activeTab === 'settings' ? 24 : 22} style={{ transition: 'all 0.18s ease' }} />
         </button>
 
         <button
@@ -273,7 +234,10 @@ export default function NavigationRail({
             border: 'none',
             cursor: 'pointer',
             padding: 0,
+            transition: 'transform 0.18s ease',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
         >
           <img
             src={user?.profile_image || `https://ui-avatars.com/api/?name=${user?.username}&background=7C5CFF&color=fff`}

@@ -305,11 +305,12 @@ export default function ChatWindow({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '10px 16px',
-          backgroundColor: 'rgba(13, 18, 32, 0.92)',
-          backdropFilter: 'blur(16px)',
+          backgroundColor: 'rgba(12, 16, 27, 0.78)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.14)',
           height: '62px',
           flexShrink: 0,
-          borderBottom: '1px solid var(--border-color)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.055)',
           position: 'relative',
           zIndex: 10,
         }}
@@ -321,7 +322,7 @@ export default function ChatWindow({
         >
           {isMobile && (
             <button
-              className="btn-icon"
+              className="header-action-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 onBack();
@@ -374,7 +375,7 @@ export default function ChatWindow({
           {!isGroup && (
             <button
               type="button"
-              className="btn-icon"
+              className="header-action-btn"
               onClick={() => onStartCall && onStartCall('video')}
               title="Video call"
             >
@@ -385,7 +386,7 @@ export default function ChatWindow({
           {!isGroup && (
             <button
               type="button"
-              className="btn-icon"
+              className="header-action-btn"
               onClick={() => onStartCall && onStartCall('audio')}
               title="Voice call"
             >
@@ -396,7 +397,7 @@ export default function ChatWindow({
           {/* Watch Together Co-Player Quick Launcher */}
           <button
             type="button"
-            className="btn-icon"
+            className="header-action-btn"
             onClick={() => setIsWatchModalOpen(true)}
             title="Watch Together (YouTube/Video)"
             style={{ color: isWatchModalOpen ? 'var(--accent-cyan)' : 'currentColor' }}
@@ -406,7 +407,7 @@ export default function ChatWindow({
 
           <button
             type="button"
-            className="btn-icon"
+            className="header-action-btn"
             onClick={() => {
               setShowSearch(!showSearch);
               if (showSearch) setSearchQuery('');
@@ -419,7 +420,7 @@ export default function ChatWindow({
 
           <button
             type="button"
-            className="btn-icon"
+            className="header-action-btn"
             onClick={() => setShowMenu(!showMenu)}
             title="More options"
           >
@@ -768,24 +769,8 @@ export default function ChatWindow({
         )}
 
         {/* End-to-End Encryption Padlock Notice */}
-        <div
-          style={{
-            backgroundColor: 'rgba(255, 193, 7, 0.11)',
-            border: '1px solid rgba(255, 193, 7, 0.22)',
-            borderRadius: '8px',
-            padding: '8px 14px',
-            margin: '4px auto 12px auto',
-            maxWidth: '430px',
-            textAlign: 'center',
-            fontSize: '12px',
-            color: '#ffdf7a',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            lineHeight: '16px',
-          }}
-        >
-          <Lock size={15} style={{ flexShrink: 0, color: '#ffc107' }} />
+        <div className="encryption-notice">
+          <Lock className="lucide-lock" size={15} style={{ flexShrink: 0, color: '#ffc107' }} />
           <span>
             Messages and calls are end-to-end encrypted. No one outside of this chat can read or listen to them.
           </span>
@@ -838,21 +823,7 @@ export default function ChatWindow({
           return (
             <React.Fragment key={m.id}>
               {showDateSeparator && (
-                <div
-                  style={{
-                    margin: '12px auto',
-                    padding: '3px 12px',
-                    backgroundColor: '#141B2B',
-                    border: '1px solid rgba(255, 255, 255, 0.07)',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    color: 'var(--text-secondary)',
-                    letterSpacing: '0.5px',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  }}
-                >
+                <div className="date-divider">
                   {dateLabel}
                 </div>
               )}

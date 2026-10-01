@@ -674,35 +674,21 @@ export default function MessageBubble({
       }}
     >
       <div
+        className={`message-bubble ${isOwnMessage ? 'out' : 'in'}`}
         style={{
           position: 'relative',
           maxWidth: '68%',
           minWidth: '120px',
-          background: isAi
-            ? 'var(--bg-glass)'
-            : isPriority
-            ? 'var(--bg-glass)'
-            : isOwnMessage
-            ? 'var(--bubble-sent-gradient)'
-            : 'var(--bubble-recv)',
-          color: 'var(--text-primary)',
-          borderRadius: '16px',
-          padding: '10px 14px',
-          backdropFilter: !isOwnMessage || isAi || isPriority ? 'blur(16px)' : 'none',
-          WebkitBackdropFilter: !isOwnMessage || isAi || isPriority ? 'blur(16px)' : 'none',
-          border: isOwnMessage && !isAi && !isPriority ? 'none' : '1px solid var(--border-color)',
-          boxShadow: isPriority
-            ? '0 0 0 1px #EF4444'
-            : isAi
-            ? '0 0 0 1px #7C5CFC'
-            : isOwnMessage
-            ? '0 8px 24px rgba(92, 70, 255, 0.18)'
-            : '0 2px 8px rgba(0, 0, 0, 0.12)',
-          wordBreak: 'break-word',
-          fontSize: '14.2px',
-          lineHeight: '1.45',
+          ...(isAi || isPriority
+            ? {
+                background: 'var(--bg-glass)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid var(--border-color)',
+                boxShadow: isPriority ? '0 0 0 1px #EF4444' : '0 0 0 1px #7C5CFC',
+              }
+            : {}),
           filter: isGhostMode && !isGhostRevealed ? 'blur(6px)' : 'none',
-          transition: 'filter 0.18s ease',
         }}
       >
         {/* Priority Header */}
