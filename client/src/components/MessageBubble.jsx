@@ -679,21 +679,25 @@ export default function MessageBubble({
           maxWidth: '68%',
           minWidth: '120px',
           background: isAi
-            ? '#171B27'
+            ? 'var(--bg-glass)'
             : isPriority
-            ? '#171B27'
+            ? 'var(--bg-glass)'
             : isOwnMessage
-            ? '#3730A3' // Specific requested outgoing color
-            : '#171B27', // Specific requested incoming color
-          color: '#F8FAFC', // White text
+            ? 'var(--bubble-sent-gradient)'
+            : 'var(--bubble-recv)',
+          color: 'var(--text-primary)',
           borderRadius: '16px',
           padding: '10px 14px',
+          backdropFilter: !isOwnMessage || isAi || isPriority ? 'blur(16px)' : 'none',
+          WebkitBackdropFilter: !isOwnMessage || isAi || isPriority ? 'blur(16px)' : 'none',
+          border: isOwnMessage && !isAi && !isPriority ? 'none' : '1px solid var(--border-color)',
           boxShadow: isPriority
             ? '0 0 0 1px #EF4444'
             : isAi
-            ? '0 0 0 1px #6366F1'
-            : '0 2px 4px rgba(0, 0, 0, 0.1)',
-          border: 'none',
+            ? '0 0 0 1px #7C5CFC'
+            : isOwnMessage
+            ? '0 8px 24px rgba(92, 70, 255, 0.18)'
+            : '0 2px 8px rgba(0, 0, 0, 0.12)',
           wordBreak: 'break-word',
           fontSize: '14.2px',
           lineHeight: '1.45',
@@ -875,7 +879,7 @@ export default function MessageBubble({
         {/* Reaction Pill Badge */}
         {Object.keys(reactionCounts).length > 0 && (
           <div
-            className="fade-in"
+            className="reaction-pop"
             style={{
               position: 'absolute',
               bottom: '-10px',

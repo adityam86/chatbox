@@ -633,13 +633,20 @@ export default function ChatList({
                       borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
                       borderBottom: '1px solid var(--border-color)',
                       gap: '12px',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      transform: 'translateX(0)',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                        e.currentTarget.style.transform = 'translateX(3px)';
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.transform = 'translateX(0)';
+                      }
                     }}
                   >
                     {/* Avatar with Pulsing Online Badge */}

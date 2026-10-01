@@ -679,44 +679,57 @@ export default function ChatWindow({
         <div
           className="fade-in"
           style={{
-            padding: '8px 16px',
-            backgroundColor: 'var(--bg-hover)',
+            padding: '12px 16px',
+            backgroundColor: 'var(--bg-panel)',
             borderBottom: '1px solid var(--border-color)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
             zIndex: 10,
           }}
         >
-          <Search size={16} style={{ color: 'var(--text-secondary)' }} />
-          <input
-            type="text"
-            placeholder="Search within this chat..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            autoFocus
+          <div
             style={{
-              flex: 1,
-              background: 'transparent',
-              color: 'var(--text-primary)',
-              fontSize: '14px',
-            }}
-          />
-          {searchQuery && (
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-              {displayedMessages.length} match{displayedMessages.length === 1 ? '' : 'es'}
-            </span>
-          )}
-          <button
-            type="button"
-            className="btn-icon"
-            onClick={() => {
-              setShowSearch(false);
-              setSearchQuery('');
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-focus)',
+              borderRadius: '12px',
+              padding: '8px 12px',
+              boxShadow: '0 0 0 3px rgba(124, 92, 252, 0.1), 0 4px 12px rgba(0, 0, 0, 0.2)',
+              transition: 'all 0.2s ease',
             }}
           >
-            <X size={16} />
-          </button>
+            <Search size={16} style={{ color: 'var(--accent)' }} />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+              style={{
+                flex: 1,
+                background: 'transparent',
+                color: 'var(--text-primary)',
+                fontSize: '14px',
+                border: 'none',
+                outline: 'none',
+              }}
+            />
+            {searchQuery && (
+              <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '600' }}>
+                {displayedMessages.length} match{displayedMessages.length === 1 ? '' : 'es'}
+              </span>
+            )}
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={() => {
+                setShowSearch(false);
+                setSearchQuery('');
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       )}
 

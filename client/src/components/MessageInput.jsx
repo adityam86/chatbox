@@ -852,7 +852,7 @@ export default function MessageInput({
             ) : (
               <button
                 type="button"
-                className="btn-primary composer-send-btn"
+                className="composer-send-btn has-text"
                 onClick={handleSend}
                 onContextMenu={(e) => {
                   e.preventDefault();

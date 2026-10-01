@@ -161,41 +161,41 @@ export default function NavigationRail({
             alignItems: 'center',
             justifyContent: 'center',
             color: '#FFFFFF',
-            boxShadow: '0 0 16px rgba(124, 92, 255, 0.4)',
+            boxShadow: '0 4px 16px rgba(124, 92, 252, 0.4)',
             cursor: 'pointer',
           }}
-          title="Aurora Chat"
+          title="ChatBox"
         >
           <Sparkles size={20} />
         </div>
 
         {/* Primary Nav Icons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
 
             return (
-              <div key={item.id} style={{ position: 'relative', width: '100%' }}>
+              <div key={item.id} style={{ position: 'relative' }}>
                 <button
                   type="button"
                   onClick={() => onSelectTab(item.id)}
                   title={item.label}
                   style={{
-                    width: '100%',
-                    height: '48px',
-                    background: isActive ? 'rgba(124, 92, 255, 0.12)' : 'transparent',
-                    borderLeft: isActive ? '2.5px solid var(--accent)' : '2.5px solid transparent',
-                    borderTop: 'none',
-                    borderRight: 'none',
-                    borderBottom: 'none',
-                    color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '14px',
+                    background: isActive ? 'var(--bg-glass)' : 'transparent',
+                    border: isActive ? '1px solid var(--border-focus)' : '1px solid transparent',
+                    color: isActive ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                    boxShadow: isActive ? '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 12px rgba(124, 92, 252, 0.1)' : 'none',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     position: 'relative',
+                    transform: isActive ? 'scale(1)' : 'scale(0.96)',
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
@@ -204,14 +204,14 @@ export default function NavigationRail({
                     if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
                   }}
                 >
-                  <Icon size={21} />
+                  <Icon size={22} />
 
                   {Boolean(item.badge) && item.badge > 0 && (
                     <span
                       style={{
                         position: 'absolute',
-                        top: '8px',
-                        right: '14px',
+                        top: '-4px',
+                        right: '-4px',
                         backgroundColor: 'var(--accent)',
                         color: '#FFFFFF',
                         fontSize: '10px',
@@ -220,6 +220,7 @@ export default function NavigationRail({
                         padding: '1px 5px',
                         minWidth: '16px',
                         textAlign: 'center',
+                        border: '2px solid var(--bg-panel)',
                       }}
                     >
                       {item.badge}
@@ -236,15 +237,31 @@ export default function NavigationRail({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', alignItems: 'center' }}>
         <button
           type="button"
-          className="btn-icon"
           onClick={onOpenSettings}
           title="Settings"
           style={{
-            color: activeTab === 'settings' ? 'var(--accent)' : 'var(--text-secondary)',
-            padding: '10px',
+            width: '44px',
+            height: '44px',
+            borderRadius: '14px',
+            background: activeTab === 'settings' ? 'var(--bg-glass)' : 'transparent',
+            border: activeTab === 'settings' ? '1px solid var(--border-focus)' : '1px solid transparent',
+            color: activeTab === 'settings' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+            boxShadow: activeTab === 'settings' ? '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 12px rgba(124, 92, 252, 0.1)' : 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            transform: activeTab === 'settings' ? 'scale(1)' : 'scale(0.96)',
+          }}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'settings') e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'settings') e.currentTarget.style.color = 'var(--text-secondary)';
           }}
         >
-          <Settings size={20} />
+          <Settings size={22} />
         </button>
 
         <button
